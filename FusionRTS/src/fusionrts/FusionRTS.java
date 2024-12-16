@@ -20,7 +20,7 @@ import ai.core.InterruptibleAI;
 
 /**
  *
- * @author santi
+ * @author Enrico Calandrini, Carmine Vitiello, Davide Mele
  */
 public class FusionRTS extends AIWithComputationBudget implements InterruptibleAI {
     public static int DEBUG = 1;
@@ -195,18 +195,18 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     
     
     public boolean iteration(int player) throws Exception {
-        
-        // tree in the first iteration is composed by only the root!
-        FusionRTSNode leaf = tree.selectLeaf(player, 1-player, epsilon_l, epsilon_g, epsilon_0, global_strategy, MAX_TREE_DEPTH, current_iteration++);
+        // Selection + Expansion
+        FusionRTSNode leaf = tree.selectLeaf(player, 1-player, epsilon_l, epsilon_g, 
+                epsilon_0, global_strategy, MAX_TREE_DEPTH, current_iteration++);
 
         if (leaf!=null) {            
             GameState gs2 = leaf.gs.clone();
-            simulate(gs2, gs2.getTime() + MAXSIMULATIONTIME); // Start the playout
+            simulate(gs2, gs2.getTime() + MAXSIMULATIONTIME); // Playout
 
             int time = gs2.getTime() - gs_to_start_from.getTime();
             double evaluation = ef.evaluate(player, 1-player, gs2)*Math.pow(0.99,time/10.0); // Evaluate final state
 
-            leaf.propagateEvaluation(evaluation,null); // Back propagate the result to parents           
+            leaf.propagateEvaluation(evaluation,null); // Backpropagation          
 
             // update the epsilon values:
             epsilon_0*=discount_0;
@@ -225,7 +225,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     }
     
     public PlayerAction getBestActionSoFar() {
-        int idx = getMostVisitedActionIdx();
+        int idx = getHighestEvaluationActionIdx();
         if (idx==-1) {
             if (DEBUG>=1) System.out.println("NaiveMCTS no children selected. Returning an empty asction");
             return new PlayerAction();

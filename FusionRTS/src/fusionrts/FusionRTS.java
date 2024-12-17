@@ -23,7 +23,7 @@ import ai.core.InterruptibleAI;
  * @author Enrico Calandrini, Carmine Vitiello, Davide Mele
  */
 public class FusionRTS extends AIWithComputationBudget implements InterruptibleAI {
-    public static int DEBUG = 1;
+    public static int DEBUG = 0;
     public EvaluationFunction ef;
        
     Random r = new Random();
@@ -52,7 +52,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public float discount_l = 0.999f;
     public float discount_g = 0.999f;
     
-    public int global_strategy = FusionRTSNode.E_GREEDY;
+    public int global_strategy = FusionRTSNode.UCB1PH;
     public boolean forceExplorationOfNonSampledActions = true;
     
     // statistics:
@@ -61,12 +61,19 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public long total_actions_issued = 0;
     public long total_time = 0;
     
+    // NEW: Progressive History enanchment
+    public GlobalMaps_PH PH_Structures;
     
     public FusionRTS(UnitTypeTable utt) {
         this(100,-1,100,10,
              0.3f, 0.0f, 0.4f,
              new RandomBiasedAI(),
              new SimpleSqrtEvaluationFunction3(), true);
+        
+                
+        if (global_strategy == FusionRTSNode.UCB1PH){
+            PH_Structures = new GlobalMaps_PH();
+        }
     }    
     
     
@@ -152,7 +159,10 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public void startNewComputation(int a_player, GameState gs) throws Exception {
         player = a_player;
         current_iteration = 0;
-        tree = new FusionRTSNode(player, 1-player, gs, null, ef.upperBound(gs), current_iteration++, forceExplorationOfNonSampledActions);
+        
+        tree = new FusionRTSNode(player, 1-player, gs, null, ef.upperBound(gs), 
+                current_iteration++, forceExplorationOfNonSampledActions,
+                PH_Structures , null );
         
         if (tree.moveGenerator==null) {
             max_actions_so_far = 0;
@@ -225,7 +235,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     }
     
     public PlayerAction getBestActionSoFar() {
-        int idx = getHighestEvaluationActionIdx();
+        int idx = getMostVisitedActionIdx();
         if (idx==-1) {
             if (DEBUG>=1) System.out.println("NaiveMCTS no children selected. Returning an empty asction");
             return new PlayerAction();
@@ -233,7 +243,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         if (DEBUG>=2) tree.showNode(0,1,ef);
         if (DEBUG>=1) {
             FusionRTSNode best = (FusionRTSNode) tree.children.get(idx);
-            System.out.println("NaiveMCTS selected children " + tree.actions.get(idx) + " explored " + best.visit_count + " Avg evaluation: " + (best.accum_evaluation/((double)best.visit_count)));
+            System.out.println("FusionRTS selected children " + tree.actions.get(idx) + " explored " + best.visit_count + " Avg evaluation: " + (best.accum_evaluation/((double)best.visit_count)));
         }
         return tree.actions.get(idx);
     }

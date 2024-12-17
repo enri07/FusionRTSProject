@@ -5,6 +5,7 @@
 package fusionrts;
 
 import java.util.Objects;
+import rts.units.Unit;
 import rts.units.UnitType;
 
 /**
@@ -16,15 +17,21 @@ import rts.units.UnitType;
  */
 
 // Define the custom key class
-public class TypeXY_Key {
+public class NoID_Key {
     private final UnitType unitType; // Unit type as a class
     private final int x;            // X coordinate
     private final int y;            // Y coordinate
+    private final int player;       // Owner of the unit
+    private final int resources;
+    private final int hitpoints;
 
-    public TypeXY_Key(UnitType Type, int x, int y) {
-        this.unitType = Type;
-        this.x = x;
-        this.y = y;
+    public NoID_Key(Unit u) {
+        this.unitType = u.getType();
+        this.x = u.getX();
+        this.y = u.getY();
+        this.player = u.getPlayer();
+        this.resources = u.getResources();
+        this.hitpoints = u.getHitPoints();
     }
 
     // Override equals() for logical equality
@@ -32,16 +39,19 @@ public class TypeXY_Key {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        TypeXY_Key Key = (TypeXY_Key) o;
+        NoID_Key Key = (NoID_Key) o;
         return x == Key.x &&
                y == Key.y &&
+               player == Key.player &&
+               resources == Key.resources &&
+               hitpoints == Key.hitpoints &&
                Objects.equals(unitType, Key.unitType);
     }
 
     // Override hashCode() for correct hashing
     @Override
     public int hashCode() {
-        return Objects.hash(unitType, x, y);
+        return Objects.hash(unitType, x, y, player, resources, hitpoints);
     }
 
     @Override

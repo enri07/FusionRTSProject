@@ -1,13 +1,20 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package fusionrts;
+
+import java.util.List;
+import rts.UnitAction;
+import rts.units.Unit;
 
 /**
  *
- * @author 39347
+ * @author Enrico Calandrini
+ * 
+ * This class extends the UnitActionTableEntry allowing to have resizable 
+ * arrays to consider new actions.
  */
 public class ExtendedUnitActionTableEntry {
-    
+    public Unit u;
+    public int nactions = 0;
+    public List<UnitAction> actions;
+    public List<Double> accum_evaluation;
+    public List<Integer> visit_count;
 }

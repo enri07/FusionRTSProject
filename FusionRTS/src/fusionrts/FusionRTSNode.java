@@ -260,9 +260,6 @@ public class FusionRTSNode extends MCTSNode {
         
         return best;
     }
-
-    
-    
     
     public FusionRTSNode selectLeafUsingLocalMABs(int maxplayer, int minplayer, float epsilon_l, float epsilon_g, float epsilon_0, int global_strategy, int max_depth, int a_creation_ID) throws Exception {   
         PlayerAction pa2;

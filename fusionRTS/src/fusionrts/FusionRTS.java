@@ -20,7 +20,6 @@ import ai.core.InterruptibleAI;
 
 /**
  *
- * @author Enrico Calandrini, Carmine Vitiello, Davide Mele
  */
 public class FusionRTS extends AIWithComputationBudget implements InterruptibleAI {
     public static int DEBUG = 0;
@@ -61,7 +60,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public long total_actions_issued = 0;
     public long total_time = 0;
     
-    // NEW: Progressive History enanchment
+    // NEW: Progressive History enhancement
     public GlobalMaps_PH PH_Structures;
     
     public FusionRTS(UnitTypeTable utt) {

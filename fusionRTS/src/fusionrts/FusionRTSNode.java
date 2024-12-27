@@ -5,7 +5,6 @@
 package fusionrts;
 
 import ai.mcts.MCTSNode;
-import static ai.mcts.MCTSNode.r;
 import ai.mcts.naivemcts.UnitActionTableEntry;
 import java.math.BigInteger;
 import java.util.*;
@@ -16,7 +15,6 @@ import util.Sampler;
 
 /**
  *
- * @author santi
  */
 public class FusionRTSNode extends MCTSNode {
     
@@ -30,46 +28,44 @@ public class FusionRTSNode extends MCTSNode {
     public static float W = 1f;   // constant for PH
     
     boolean forceExplorationOfNonSampledActions = true;
-    boolean hasMoreActions = true;
     public PlayerActionGenerator moveGenerator;
     HashMap<BigInteger,FusionRTSNode> childrenMap = new LinkedHashMap<>();    // associates action codes with children
     // Decomposition of the player actions in unit actions, and their contributions:
     public List<UnitActionTableEntry> unitActionTable;
     double evaluation_bound;    // this is the maximum positive value that the evaluation function can return
-    public BigInteger multipliers[];
+    public BigInteger[] multipliers;
     
     // New pointer to the global structures used to implement the Progressive History technique
-    GlobalMaps_PH globalStructures_PH;
-    // In order to backpropagate also on the gloabl structures, we need to store
+    GlobalMaps_PH globalStructuresPH;
+    // In order to backpropagate also on the global structures, we need to store
     // in each node the action that lead to it
-    public List<Unit_Action_Pair> unit_action_list;
+    public List<Pair<Unit, UnitAction>> unitActionList;
 
-    public FusionRTSNode(int maxplayer, int minplayer, GameState a_gs, FusionRTSNode a_parent, 
-            double a_evaluation_bound, int a_creation_ID, boolean fensa,
-            GlobalMaps_PH PH_Structures , List<Unit_Action_Pair> parent_unit_action_list) throws Exception {
-        parent = a_parent;
-        gs = a_gs;
-        if (parent==null) depth = 0;
-                     else depth = parent.depth+1;     
-        evaluation_bound = a_evaluation_bound;
-        creation_ID = a_creation_ID;
+    public FusionRTSNode(int maxPlayer, int minPlayer, GameState gameState, FusionRTSNode parentNode,
+            double evaluationBound, int aCreationID, boolean fensa,
+            GlobalMaps_PH PHStructures , List<Pair<Unit, UnitAction>> parentUnitActionList) throws Exception {
+        parent = parentNode;
+        gs = gameState;
+        if (parent == null) depth = 0; else depth = parent.depth + 1;
+        evaluation_bound = evaluationBound;
+        creation_ID = aCreationID;
         forceExplorationOfNonSampledActions = fensa;
         
-        // New structures for PH enanchment
-        globalStructures_PH = PH_Structures;
-        unit_action_list = parent_unit_action_list;
+        // New structures for PH enhancement
+        globalStructuresPH = PHStructures;
+        unitActionList = parentUnitActionList;
         
         while (gs.winner() == -1 &&
                !gs.gameover() &&
-               !gs.canExecuteAnyAction(maxplayer) &&
-               !gs.canExecuteAnyAction(minplayer)) {
+               !gs.canExecuteAnyAction(maxPlayer) &&
+               !gs.canExecuteAnyAction(minPlayer)) {
             gs.cycle();
         }
         if (gs.winner() != -1 || gs.gameover()) {
             type = -1;
-        } else if (gs.canExecuteAnyAction(maxplayer)) {
+        } else if (gs.canExecuteAnyAction(maxPlayer)) {
             type = 0;
-            moveGenerator = new PlayerActionGenerator(gs, maxplayer);
+            moveGenerator = new PlayerActionGenerator(gs, maxPlayer);
             actions = new ArrayList<>();
             children = new ArrayList<>();
             unitActionTable = new LinkedList<>();
@@ -92,9 +88,9 @@ public class FusionRTSNode extends MCTSNode {
                 baseMultiplier = baseMultiplier.multiply(BigInteger.valueOf(ae.nactions));
                 idx++;
              }
-        } else if (gs.canExecuteAnyAction(minplayer)) {
+        } else if (gs.canExecuteAnyAction(minPlayer)) {
             type = 1;
-            moveGenerator = new PlayerActionGenerator(gs, minplayer);
+            moveGenerator = new PlayerActionGenerator(gs, minPlayer);
             actions = new ArrayList<>();
             children = new ArrayList<>();
             unitActionTable = new LinkedList<>();
@@ -125,9 +121,9 @@ public class FusionRTSNode extends MCTSNode {
 
     
     // Naive Sampling:
-    public FusionRTSNode selectLeaf(int maxplayer, int minplayer, float epsilon_l, 
+    public FusionRTSNode selectLeaf(int maxPlayer, int minPlayer, float epsilon_l, 
             float epsilon_g, float epsilon_0, int global_strategy, int max_depth, 
-            int a_creation_ID) throws Exception {
+            int aCreationID) throws Exception {
         if (unitActionTable == null) return this;
         if (depth>=max_depth) return this;       
         
@@ -154,11 +150,11 @@ public class FusionRTSNode extends MCTSNode {
             else if (global_strategy==UCB1) selected = selectFromAlreadySampledUCB1(C);
             else if (global_strategy==UCB1PH) selected = selectFromAlreadySampledUCB1_withPH(C,W);
             // After having identified the best child, we continue to explore until we find a leaf.
-            return selected.selectLeaf(maxplayer, minplayer, epsilon_l, epsilon_g, epsilon_0, global_strategy, max_depth, a_creation_ID);
+            return selected.selectLeaf(maxPlayer, minPlayer, epsilon_l, epsilon_g, epsilon_0, global_strategy, max_depth, aCreationID);
         }  
         else {
             // sample from the local MABs (this might recursively call "selectLeaf" internally):
-            return selectLeafUsingLocalMABs(maxplayer, minplayer, epsilon_l, epsilon_g, epsilon_0, global_strategy, max_depth, a_creation_ID);
+            return selectLeafUsingLocalMABs(maxPlayer, minPlayer, epsilon_l, epsilon_g, epsilon_0, global_strategy, max_depth, aCreationID);
         }
     }
    
@@ -226,9 +222,9 @@ public class FusionRTSNode extends MCTSNode {
             // Retrieve child node in FusionRTS class
             FusionRTSNode fusion_node = (FusionRTSNode)pate;
             
-            // New part given by PH enanchment
+            // New part given by PH enhancement
             // Retrieve sa/na
-            double hist_bias = globalStructures_PH.get_statistic(fusion_node.unit_action_list);
+            double hist_bias = globalStructuresPH.get_statistic(fusion_node.unitActionList);
             
             // type == 1 means that this is a node where we are exploring action
             // of the opponent player. Thus, we want to MINIMIZE the expectation
@@ -261,7 +257,7 @@ public class FusionRTSNode extends MCTSNode {
         return best;
     }
     
-    public FusionRTSNode selectLeafUsingLocalMABs(int maxplayer, int minplayer, float epsilon_l, float epsilon_g, float epsilon_0, int global_strategy, int max_depth, int a_creation_ID) throws Exception {   
+    public FusionRTSNode selectLeafUsingLocalMABs(int maxPlayer, int minPlayer, float epsilon_l, float epsilon_g, float epsilon_0, int global_strategy, int max_depth, int aCreationID) throws Exception {   
         PlayerAction pa2;
         BigInteger actionCode;       
 
@@ -337,7 +333,7 @@ public class FusionRTSNode extends MCTSNode {
         pa2.setResourceUsage(base_ru.clone());
         
         // NEW: Prepare list of (unit,action) leading to the new child
-        List<Unit_Action_Pair> child_unit_action_list = new ArrayList<>();
+        List<Pair<Unit, UnitAction>> child_unit_action_list = new ArrayList<>();
         while(!notSampledYet.isEmpty()) {
             int i = notSampledYet.remove(r.nextInt(notSampledYet.size()));
 
@@ -378,9 +374,9 @@ public class FusionRTSNode extends MCTSNode {
                 pa2.getResourceUsage().merge(r2);
                 pa2.addUnitAction(ate.u, ua);
                 
-                // NEW: Update also global maps with new action selected for PH enanchment
-                if( globalStructures_PH != null ){
-                    child_unit_action_list.add(new Unit_Action_Pair(ate.u, ua));
+                // NEW: Update also global maps with new action selected for PH enhancement
+                if( globalStructuresPH != null ){
+                    child_unit_action_list.add(new Pair<Unit, UnitAction>(ate.u, ua));
                 }
                 
                 actionCode = actionCode.add(BigInteger.valueOf(code).multiply(multipliers[i]));
@@ -396,15 +392,15 @@ public class FusionRTSNode extends MCTSNode {
             actions.add(pa2);            
             GameState gs2 = gs.cloneIssue(pa2);
             // Generate new child with this as parent
-            FusionRTSNode node = new FusionRTSNode(maxplayer, minplayer, gs2.clone(), 
-                    this, evaluation_bound, a_creation_ID, forceExplorationOfNonSampledActions,
-                    globalStructures_PH , child_unit_action_list );
+            FusionRTSNode node = new FusionRTSNode(maxPlayer, minPlayer, gs2.clone(), 
+                    this, evaluation_bound, aCreationID, forceExplorationOfNonSampledActions,
+                    globalStructuresPH , child_unit_action_list );
             childrenMap.put(actionCode,node);
             children.add(node);          
             return node; // We have found a new child, so we can stop the selection in the tree and return this               
         }
 
-        return pate.selectLeaf(maxplayer, minplayer, epsilon_l, epsilon_g, epsilon_0, global_strategy, max_depth, a_creation_ID);
+        return pate.selectLeaf(maxPlayer, minPlayer, epsilon_l, epsilon_g, epsilon_0, global_strategy, max_depth, aCreationID);
     }
     
     
@@ -420,9 +416,9 @@ public class FusionRTSNode extends MCTSNode {
         accum_evaluation += evaluation;
         visit_count++;
         
-        // Also update the global structures if PH enanchment is enabled
-        if(globalStructures_PH != null && unit_action_list != null ){
-            globalStructures_PH.update(unit_action_list,evaluation);
+        // Also update the global structures if PH enhancement is enabled
+        if(globalStructuresPH != null && unitActionList != null ){
+            globalStructuresPH.update(unitActionList,evaluation);
         }
         
 //        if (child!=null) System.out.println(evaluation);

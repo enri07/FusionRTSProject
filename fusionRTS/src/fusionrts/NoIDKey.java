@@ -10,22 +10,20 @@ import rts.units.UnitType;
 
 /**
  *
- * @author 39347
- * 
- * This class will be used to define keys for the global structure used to 
- * implement the progressive history enanchment.
+ * This class will be used to define the keys for the global map structure used to
+ * implement the progressive history enhancement
  */
 
 // Define the custom key class
-public class NoID_Key {
+public class NoIDKey {
     private final UnitType unitType; // Unit type as a class
-    private final int x;            // X coordinate
-    private final int y;            // Y coordinate
-    private final int player;       // Owner of the unit
-    private final int resources;
-    private final int hitpoints;
+    private final int x;             // X coordinate of the unit
+    private final int y;             // Y coordinate of the unit
+    private final int player;        // Owner of the unit
+    private final int resources;     // Resources that the unit has taken
+    private final int hitpoints;     // hitpoints of the unit
 
-    public NoID_Key(Unit u) {
+    public NoIDKey(Unit u) {
         this.unitType = u.getType();
         this.x = u.getX();
         this.y = u.getY();
@@ -39,7 +37,7 @@ public class NoID_Key {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        NoID_Key Key = (NoID_Key) o;
+        NoIDKey Key = (NoIDKey) o;
         return x == Key.x &&
                y == Key.y &&
                player == Key.player &&
@@ -56,6 +54,13 @@ public class NoID_Key {
 
     @Override
     public String toString() {
-        return "UnitKey{unitType=" + unitType.getClass().getName() + ", x=" + x + ", y=" + y + "}";
+        return "NoIDKey{" +
+                "unitType= " + unitType.getClass().getName() +
+                ", x= " + x +
+                ", y= " + y +
+                ", player= " + player +
+                ", resources= " + resources +
+                ", hitpoints= " + hitpoints +
+                "}";
     }
 }

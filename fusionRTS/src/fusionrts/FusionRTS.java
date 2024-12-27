@@ -13,6 +13,8 @@ import ai.evaluation.SimpleSqrtEvaluationFunction3;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import ai.mcts.MCTSNode;
 import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
@@ -51,7 +53,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public float discount_l = 0.999f;
     public float discount_g = 0.999f;
     
-    public int global_strategy = FusionRTSNode.UCB1PH;
+    public int globalStrategy = FusionRTSNode.UCB1PH;
     public boolean forceExplorationOfNonSampledActions = true;
     
     // statistics:
@@ -61,8 +63,11 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public long total_time = 0;
     
     // NEW: Progressive History enhancement
-    public GlobalMaps_PH PH_Structures;
-    
+    public GlobalMaps_PH PHStructures;
+
+    // NEW: Tree Reuse enhancement
+    public FusionRTSNode rootToBeReused = null;
+
     public FusionRTS(UnitTypeTable utt) {
         this(100,-1,100,10,
              0.3f, 0.0f, 0.4f,
@@ -70,8 +75,8 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
              new SimpleSqrtEvaluationFunction3(), true);
         
                 
-        if (global_strategy == FusionRTSNode.UCB1PH){
-            PH_Structures = new GlobalMaps_PH();
+        if (globalStrategy == FusionRTSNode.UCB1PH){
+            PHStructures = new GlobalMaps_PH();
         }
     }    
     
@@ -111,7 +116,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         forceExplorationOfNonSampledActions = fensa;
     }    
     
-    public FusionRTS(int available_time, int max_playouts, int lookahead, int max_depth, float e_l, float e_g, float e_0, int a_global_strategy, AI policy, EvaluationFunction a_ef, boolean fensa) {
+    public FusionRTS(int available_time, int max_playouts, int lookahead, int max_depth, float e_l, float e_g, float e_0, int a_globalStrategy, AI policy, EvaluationFunction a_ef, boolean fensa) {
         super(available_time, max_playouts);
         MAXSIMULATIONTIME = lookahead;
         playoutPolicy = policy;
@@ -122,7 +127,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         discount_l = 1.0f;
         discount_g = 1.0f;
         discount_0 = 1.0f;
-        global_strategy = a_global_strategy;
+        globalStrategy = a_globalStrategy;
         ef = a_ef;
         forceExplorationOfNonSampledActions = fensa;
     }        
@@ -143,8 +148,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     }    
     
     
-    public PlayerAction getAction(int player, GameState gs) throws Exception
-    {
+    public PlayerAction getAction(int player, GameState gs) throws Exception {
         if (gs.canExecuteAnyAction(player)) {
             startNewComputation(player,gs.clone()); // It simply generates the root node with all the possible actions to be computed (CHILD NODES NOT INITIALIZED)
             computeDuringOneGameFrame();
@@ -158,10 +162,16 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public void startNewComputation(int a_player, GameState gs) throws Exception {
         player = a_player;
         current_iteration = 0;
-        
-        tree = new FusionRTSNode(player, 1-player, gs, null, ef.upperBound(gs), 
-                current_iteration++, forceExplorationOfNonSampledActions,
-                PH_Structures , null );
+
+        // New: tree reuse enhancement
+        // if it can not find the same state then it makes a new root 
+        tree = findNewState(gs);
+        if(tree == null) {
+            tree = new FusionRTSNode(player, 1 - player, gs, null, ef.upperBound(gs),
+                    current_iteration++, forceExplorationOfNonSampledActions,
+                    PHStructures, null);
+        }
+
         
         if (tree.moveGenerator==null) {
             max_actions_so_far = 0;
@@ -206,14 +216,14 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public boolean iteration(int player) throws Exception {
         // Selection + Expansion
         FusionRTSNode leaf = tree.selectLeaf(player, 1-player, epsilon_l, epsilon_g, 
-                epsilon_0, global_strategy, MAX_TREE_DEPTH, current_iteration++);
+                epsilon_0, globalStrategy, MAX_TREE_DEPTH, current_iteration++);
 
-        if (leaf!=null) {            
+        if (leaf != null) {
             GameState gs2 = leaf.gs.clone();
             simulate(gs2, gs2.getTime() + MAXSIMULATIONTIME); // Playout
 
             int time = gs2.getTime() - gs_to_start_from.getTime();
-            double evaluation = ef.evaluate(player, 1-player, gs2)*Math.pow(0.99,time/10.0); // Evaluate final state
+            double evaluation = ef.evaluate(player, 1 - player, gs2) * Math.pow(0.99, time/10.0); // Evaluate final state
 
             leaf.propagateEvaluation(evaluation,null); // Backpropagation          
 
@@ -235,15 +245,23 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     
     public PlayerAction getBestActionSoFar() {
         int idx = getMostVisitedActionIdx();
-        if (idx==-1) {
-            if (DEBUG>=1) System.out.println("NaiveMCTS no children selected. Returning an empty asction");
+        if (idx == -1) {
+            if (DEBUG >= 1) System.out.println("NaiveMCTS no children selected. Returning an empty action");
             return new PlayerAction();
         }
-        if (DEBUG>=2) tree.showNode(0,1,ef);
-        if (DEBUG>=1) {
+        if (DEBUG >= 2) tree.showNode(0,1,ef);
+        if (DEBUG >= 1) {
             FusionRTSNode best = (FusionRTSNode) tree.children.get(idx);
             System.out.println("FusionRTS selected children " + tree.actions.get(idx) + " explored " + best.visit_count + " Avg evaluation: " + (best.accum_evaluation/((double)best.visit_count)));
         }
+
+        // NEW: tree reuse enhancement
+        FusionRTSNode best = (FusionRTSNode) tree.children.get(idx);
+        // Remove parent connection
+        best.parent = null;
+        best.depth = 0;
+        rootToBeReused = best;
+
         return tree.actions.get(idx);
     }
     
@@ -325,7 +343,24 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public GameState getGameStateToStartFrom() {
         return gs_to_start_from;
     }
-    
+
+    // NEW: tree reuse
+    public FusionRTSNode findNewState( GameState currentGs ){
+        // We look if any of the known child of the node has a game state equal
+        // to the new one
+        if (rootToBeReused == null || rootToBeReused.children == null) return null;
+        for(MCTSNode child : rootToBeReused.children) {
+            FusionRTSNode childrenNode = (FusionRTSNode)child;
+            if(currentGs.equals(childrenNode.gs)) {
+                // found correct node
+                //System.out.println("Found it!");
+                childrenNode.parent = null;
+                childrenNode.depth = 0;
+                return childrenNode;
+            }
+        }
+        return null;
+    }
     
     @Override
     public String toString() {

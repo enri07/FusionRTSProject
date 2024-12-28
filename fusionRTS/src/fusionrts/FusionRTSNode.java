@@ -119,14 +119,14 @@ public class FusionRTSNode extends MCTSNode {
         }
     }
 
-    
+
     // Naive Sampling:
-    public FusionRTSNode selectLeaf(int maxPlayer, int minPlayer, float epsilon_l, 
-            float epsilon_g, float epsilon_0, int global_strategy, int max_depth, 
+    public FusionRTSNode selectLeaf(int maxPlayer, int minPlayer, float epsilon_l,
+            float epsilon_g, float epsilon_0, int global_strategy, int max_depth,
             int aCreationID) throws Exception {
         if (unitActionTable == null) return this;
-        if (depth>=max_depth) return this;       
-        
+        if (depth>=max_depth) return this;
+
         /*
         // DEBUG:
         for(PlayerAction a:actions) {
@@ -138,28 +138,28 @@ public class FusionRTSNode extends MCTSNode {
                 }
                 if (!found) new Error("DEBUG 2!!!!!");
             }
-        } 
+        }
         */
-        
+
         // In the first iteration no child is initialized, thus we will go straight to else (LocalMABS).
         // In following iteration (without considering the second term) we have a path already constructed.
-        if (children.size()>0 && r.nextFloat()>=epsilon_0) {
+        if (!children.isEmpty() && r.nextFloat() >= epsilon_0) {
             // sample from the global MAB:
             FusionRTSNode selected = null;
             if (global_strategy==E_GREEDY) selected = selectFromAlreadySampledEpsilonGreedy(epsilon_g);
             else if (global_strategy==UCB1) selected = selectFromAlreadySampledUCB1(C);
             else if (global_strategy==UCB1PH) selected = selectFromAlreadySampledUCB1_withPH(C,W);
             // After having identified the best child, we continue to explore until we find a leaf.
+            assert selected != null;
             return selected.selectLeaf(maxPlayer, minPlayer, epsilon_l, epsilon_g, epsilon_0, global_strategy, max_depth, aCreationID);
-        }  
-        else {
+        } else {
             // sample from the local MABs (this might recursively call "selectLeaf" internally):
             return selectLeafUsingLocalMABs(maxPlayer, minPlayer, epsilon_l, epsilon_g, epsilon_0, global_strategy, max_depth, aCreationID);
         }
     }
-   
 
-    
+
+
     public FusionRTSNode selectFromAlreadySampledEpsilonGreedy(float epsilon_g) throws Exception {
         if (r.nextFloat()>=epsilon_g) {
             // Choose the best path!
@@ -169,30 +169,29 @@ public class FusionRTSNode extends MCTSNode {
                     // max node:
                     if (best==null || (pate.accum_evaluation/pate.visit_count)>(best.accum_evaluation/best.visit_count)) {
                         best = (FusionRTSNode)pate;
-                    }                    
+                    }
                 } else {
                     // min node:
                     if (best==null || (pate.accum_evaluation/pate.visit_count)<(best.accum_evaluation/best.visit_count)) {
                         best = (FusionRTSNode)pate;
-                    }                                        
+                    }
                 }
             }
 
             return best;
         } else {
             // choose one at random from the ones seen so far:
-            FusionRTSNode best = (FusionRTSNode)children.get(r.nextInt(children.size()));
-            return best;
+            return (FusionRTSNode)children.get(r.nextInt(children.size()));
         }
     }
-    
-    
+
+
     public FusionRTSNode selectFromAlreadySampledUCB1(float C) throws Exception {
         FusionRTSNode best = null;
         double bestScore = 0;
         for(MCTSNode pate:children) {
-            double exploitation = ((double)pate.accum_evaluation) / pate.visit_count;
-            double exploration = Math.sqrt(Math.log((double)visit_count)/pate.visit_count);
+            double exploitation = (pate.accum_evaluation) / pate.visit_count;
+            double exploration = Math.sqrt(Math.log(visit_count)/pate.visit_count);
             if (type==0) {
                 // max node:
                 exploitation = (evaluation_bound + exploitation)/(2*evaluation_bound);
@@ -201,65 +200,64 @@ public class FusionRTSNode extends MCTSNode {
             }
     //            System.out.println(exploitation + " + " + exploration);
 
-            double tmp = C*exploitation + exploration;            
+            double tmp = C*exploitation + exploration;
             if (best==null || tmp>bestScore) {
                 best = (FusionRTSNode)pate;
                 bestScore = tmp;
             }
         }
-        
+
         return best;
     }
-    
+
     public FusionRTSNode selectFromAlreadySampledUCB1_withPH(float C, float W) throws Exception {
         FusionRTSNode best = null;
         double bestScore = 0;
-        for(MCTSNode pate:children) {
-            double exploitation = ((double)pate.accum_evaluation) / pate.visit_count;
-            double exploration = Math.sqrt(Math.log((double)visit_count)/pate.visit_count);
+        for(MCTSNode pate : children) {
+            double exploitation = (pate.accum_evaluation) / pate.visit_count;
+            double exploration = Math.sqrt(Math.log(visit_count)/pate.visit_count);
             //            System.out.println(exploitation + " + " + exploration);
-            
+
             // Retrieve child node in FusionRTS class
             FusionRTSNode fusion_node = (FusionRTSNode)pate;
-            
+
             // New part given by PH enhancement
             // Retrieve sa/na
             double hist_bias = globalStructuresPH.get_statistic(fusion_node.unitActionList);
-            
+
             // type == 1 means that this is a node where we are exploring action
             // of the opponent player. Thus, we want to MINIMIZE the expectation
             // which is equivalent to study the best move of the opponent.
             if (type==0) {
                 // max node:
                exploitation = (evaluation_bound + exploitation)/(2*evaluation_bound);
-               hist_bias = (evaluation_bound + hist_bias)/(2*evaluation_bound);
             } else {
                exploitation = (evaluation_bound - exploitation)/(2*evaluation_bound);
-               hist_bias = (evaluation_bound + hist_bias)/(2*evaluation_bound);
             }
-            
+            hist_bias = (evaluation_bound + hist_bias)/(2*evaluation_bound);
+
             // Evaluate progressive bias
-            double prog_bias = W/(pate.visit_count - (double)pate.accum_evaluation + 1 );
-            
-            double normal_term = C*exploitation + exploration; 
-            
+            double prog_bias = W/(pate.visit_count - pate.accum_evaluation + 1 );
+
+            double normal_term = C*exploitation + exploration;
+
             double prog_history = hist_bias*prog_bias;
             //System.out.println("exploitation = " + exploitation + "exploration = " + exploration +" statistics = " + first_term + " second_term = " + second_term);
-            
+
             double tmp = normal_term + prog_history;
-            
+
             if (best==null || tmp>bestScore) {
                 best = (FusionRTSNode)pate;
                 bestScore = tmp;
             }
         }
-        
+
         return best;
     }
-    
-    public FusionRTSNode selectLeafUsingLocalMABs(int maxPlayer, int minPlayer, float epsilon_l, float epsilon_g, float epsilon_0, int global_strategy, int max_depth, int aCreationID) throws Exception {   
+
+    public FusionRTSNode selectLeafUsingLocalMABs(int maxPlayer, int minPlayer, float epsilon_l, float epsilon_g, float epsilon_0, int global_strategy, int max_depth, int aCreationID) throws Exception {
         PlayerAction pa2;
-        BigInteger actionCode;       
+        BigInteger actionCode;
 
         // For each unit, rank the unitActions according to preference:
         List<double []> distributions = new LinkedList<>();
@@ -283,7 +281,7 @@ public class FusionRTSNode extends MCTSNode {
                     }
                 } else { // We are sampling an action for the other player
                     // min node:
-                    if (bestIdx==-1 || 
+                    if (bestIdx==-1 ||
                         (visits!=0 && ate.visit_count[i]==0) ||
                         (visits!=0 && (ate.accum_evaluation[i]/ate.visit_count[i])<bestEvaluation)) {
                         bestIdx = i;
@@ -298,10 +296,10 @@ public class FusionRTSNode extends MCTSNode {
                 dist[bestIdx] = (1-epsilon_l) + (epsilon_l/ate.nactions);
             } else {
                 if (forceExplorationOfNonSampledActions) {
-                    for(int j = 0;j<dist.length;j++) 
+                    for(int j = 0;j<dist.length;j++)
                         if (ate.visit_count[j]>0) dist[j] = 0;
                 }
-            }  
+            }
 
             if (DEBUG>=3) {
                 System.out.print("[ ");
@@ -313,7 +311,7 @@ public class FusionRTSNode extends MCTSNode {
             }
 
             notSampledYet.add(distributions.size());
-            distributions.add(dist); 
+            distributions.add(dist);
             // in dist we have the preference for eacu unit and each action.
             // In distributions we have the dist of all the units
         }
@@ -331,7 +329,7 @@ public class FusionRTSNode extends MCTSNode {
         pa2 = new PlayerAction();
         actionCode = BigInteger.ZERO;
         pa2.setResourceUsage(base_ru.clone());
-        
+
         // NEW: Prepare list of (unit,action) leading to the new child
         List<Pair<Unit, UnitAction>> child_unit_action_list = new ArrayList<>();
         while(!notSampledYet.isEmpty()) {
@@ -363,47 +361,47 @@ public class FusionRTSNode extends MCTSNode {
                         dist_outputs.remove(idx);
                         code = (Integer)Sampler.weighted(dist_l, dist_outputs);
                         ua = ate.actions.get(code);
-                        r2 = ua.resourceUsage(ate.u, gs.getPhysicalGameState());                            
+                        r2 = ua.resourceUsage(ate.u, gs.getPhysicalGameState());
                     }while(!pa2.getResourceUsage().consistentWith(r2, gs));
                 }
 
                 // DEBUG code:
                 if (gs.getUnit(ate.u.getID())==null) throw new Error("Issuing an action to an inexisting unit!!!");
-               
+
 
                 pa2.getResourceUsage().merge(r2);
                 pa2.addUnitAction(ate.u, ua);
-                
+
                 // NEW: Update also global maps with new action selected for PH enhancement
-                if( globalStructuresPH != null ){
-                    child_unit_action_list.add(new Pair<Unit, UnitAction>(ate.u, ua));
+                if(globalStructuresPH != null){
+                    child_unit_action_list.add(new Pair<>(ate.u, ua));
                 }
-                
+
                 actionCode = actionCode.add(BigInteger.valueOf(code).multiply(multipliers[i]));
 
             } catch(Exception e) {
                 e.printStackTrace();
             }
-        }   
+        }
 
         // After we defined the action to perform, retrieve the child to which the action leads. In the first iteration is null (no child initialized)
         FusionRTSNode pate = childrenMap.get(actionCode);
         if (pate==null) {
-            actions.add(pa2);            
+            actions.add(pa2);
             GameState gs2 = gs.cloneIssue(pa2);
             // Generate new child with this as parent
-            FusionRTSNode node = new FusionRTSNode(maxPlayer, minPlayer, gs2.clone(), 
+            FusionRTSNode node = new FusionRTSNode(maxPlayer, minPlayer, gs2.clone(),
                     this, evaluation_bound, aCreationID, forceExplorationOfNonSampledActions,
                     globalStructuresPH , child_unit_action_list );
             childrenMap.put(actionCode,node);
-            children.add(node);          
-            return node; // We have found a new child, so we can stop the selection in the tree and return this               
+            children.add(node);
+            return node; // We have found a new child, so we can stop the selection in the tree and return this
         }
 
         return pate.selectLeaf(maxPlayer, minPlayer, epsilon_l, epsilon_g, epsilon_0, global_strategy, max_depth, aCreationID);
     }
-    
-    
+
+
     public UnitActionTableEntry getActionTableEntry(Unit u) {
         for(UnitActionTableEntry e:unitActionTable) {
             if (e.u == u) return e;
@@ -415,12 +413,12 @@ public class FusionRTSNode extends MCTSNode {
     public void propagateEvaluation(double evaluation, FusionRTSNode child) {
         accum_evaluation += evaluation;
         visit_count++;
-        
+
         // Also update the global structures if PH enhancement is enabled
         if(globalStructuresPH != null && unitActionList != null ){
-            globalStructuresPH.update(unitActionList,evaluation);
+            globalStructuresPH.update(unitActionList, evaluation);
         }
-        
+
 //        if (child!=null) System.out.println(evaluation);
 
         // update the unitAction table:
@@ -436,7 +434,7 @@ public class FusionRTSNode extends MCTSNode {
                     System.out.println("Looking for action: " + ua.m_b);
                     System.out.println("Available actions are: " + actionTable.actions);
                 }
-                
+
                 actionTable.accum_evaluation[idx] += evaluation;
                 actionTable.visit_count[idx]++;
             }

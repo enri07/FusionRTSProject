@@ -2,16 +2,11 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package test;
-
 import ai.core.AI;
-import ai.*;
 import ai.abstraction.LightRush;
-import ai.abstraction.WorkerRush;
 import ai.abstraction.pathfinding.BFSPathFinding;
 import fusionrts.FusionRTS;
 import gui.PhysicalGameStatePanel;
-import ai.mcts.naivemcts.TwoPhaseNaiveMCTS;
 
 import javax.swing.JFrame;
 import rts.GameState;

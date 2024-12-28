@@ -29,13 +29,13 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
        
     Random r = new Random();
     public AI playoutPolicy = new RandomBiasedAI();
-    protected long max_actions_so_far = 0;
+    protected long maxActionsSoFar = 0;
     
-    protected GameState gs_to_start_from;
+    protected GameState gsToStartFrom;
     protected FusionRTSNode tree;
     protected int current_iteration = 0;
             
-    public int MAXSIMULATIONTIME = 1024;
+    public int MAX_SIMULATION_TIME = 1024;
     public int MAX_TREE_DEPTH = 10;
     
     protected int player;
@@ -71,8 +71,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public FusionRTS(UnitTypeTable utt) {
         this(100,-1,100,10,
              0.3f, 0.0f, 0.4f,
-             new RandomBiasedAI(),
-             new SimpleSqrtEvaluationFunction3(), true);
+             new RandomBiasedAI(), new SimpleSqrtEvaluationFunction3(), true);
         
                 
         if (globalStrategy == FusionRTSNode.UCB1PH){
@@ -88,7 +87,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
                                AI policy, EvaluationFunction a_ef,
                                boolean fensa) {
         super(available_time, max_playouts);
-        MAXSIMULATIONTIME = lookahead;
+        MAX_SIMULATION_TIME = lookahead;
         playoutPolicy = policy;
         MAX_TREE_DEPTH = max_depth;
         initial_epsilon_l = epsilon_l = e_l;
@@ -103,7 +102,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
 
     public FusionRTS(int available_time, int max_playouts, int lookahead, int max_depth, float e_l, float e_g, float e_0, AI policy, EvaluationFunction a_ef, boolean fensa) {
         super(available_time, max_playouts);
-        MAXSIMULATIONTIME = lookahead;
+        MAX_SIMULATION_TIME = lookahead;
         playoutPolicy = policy;
         MAX_TREE_DEPTH = max_depth;
         initial_epsilon_l = epsilon_l = e_l;
@@ -118,7 +117,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     
     public FusionRTS(int available_time, int max_playouts, int lookahead, int max_depth, float e_l, float e_g, float e_0, int a_globalStrategy, AI policy, EvaluationFunction a_ef, boolean fensa) {
         super(available_time, max_playouts);
-        MAXSIMULATIONTIME = lookahead;
+        MAX_SIMULATION_TIME = lookahead;
         playoutPolicy = policy;
         MAX_TREE_DEPTH = max_depth;
         initial_epsilon_l = epsilon_l = e_l;
@@ -134,7 +133,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     
     public void reset() {
         tree = null;
-        gs_to_start_from = null;
+        gsToStartFrom = null;
         total_runs = 0;
         total_cycles_executed = 0;
         total_actions_issued = 0;
@@ -144,13 +143,14 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         
     
     public AI clone() {
-        return new FusionRTS(TIME_BUDGET, ITERATIONS_BUDGET, MAXSIMULATIONTIME, MAX_TREE_DEPTH, epsilon_l, discount_l, epsilon_g, discount_g, epsilon_0, discount_0, playoutPolicy, ef, forceExplorationOfNonSampledActions);
+        return new FusionRTS(TIME_BUDGET, ITERATIONS_BUDGET, MAX_SIMULATION_TIME, MAX_TREE_DEPTH, epsilon_l, discount_l, epsilon_g, discount_g, epsilon_0, discount_0, playoutPolicy, ef, forceExplorationOfNonSampledActions);
     }    
     
     
     public PlayerAction getAction(int player, GameState gs) throws Exception {
+        
         if (gs.canExecuteAnyAction(player)) {
-            startNewComputation(player,gs.clone()); // It simply generates the root node with all the possible actions to be computed (CHILD NODES NOT INITIALIZED)
+            startNewComputation(player, gs.clone()); // It simply generates the root node with all the possible actions to be computed (CHILD NODES NOT INITIALIZED)
             computeDuringOneGameFrame();
             return getBestActionSoFar();
         } else {
@@ -173,12 +173,12 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         }
 
         
-        if (tree.moveGenerator==null) {
-            max_actions_so_far = 0;
+        if (tree.moveGenerator == null) {
+            maxActionsSoFar = 0;
         } else {
-            max_actions_so_far = Math.max(tree.moveGenerator.getSize(),max_actions_so_far); // Number of available actions from current state     
+            maxActionsSoFar = Math.max(tree.moveGenerator.getSize(), maxActionsSoFar); // Number of available actions from current state     
         }
-        gs_to_start_from = gs;
+        gsToStartFrom = gs;
         
         epsilon_l = initial_epsilon_l;
         epsilon_g = initial_epsilon_g;
@@ -189,7 +189,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public void resetSearch() {
         if (DEBUG>=2) System.out.println("Resetting search...");
         tree = null;
-        gs_to_start_from = null;
+        gsToStartFrom = null;
     }
     
 
@@ -219,11 +219,11 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
                 epsilon_0, globalStrategy, MAX_TREE_DEPTH, current_iteration++);
 
         if (leaf != null) {
-            GameState gs2 = leaf.gs.clone();
-            simulate(gs2, gs2.getTime() + MAXSIMULATIONTIME); // Playout
+            GameState gs = leaf.gs.clone();
+            simulate(gs, gs.getTime() + MAX_SIMULATION_TIME); // Playout
 
-            int time = gs2.getTime() - gs_to_start_from.getTime();
-            double evaluation = ef.evaluate(player, 1 - player, gs2) * Math.pow(0.99, time/10.0); // Evaluate final state
+            int time = gs.getTime() - gsToStartFrom.getTime();
+            double evaluation = ef.evaluate(player, 1 - player, gs) * Math.pow(0.99, time/10.0); // Evaluate final state
 
             leaf.propagateEvaluation(evaluation,null); // Backpropagation          
 
@@ -272,7 +272,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         int bestIdx = -1;
         FusionRTSNode best = null;
         if (DEBUG>=2) {
-//            for(Player p:gs_to_start_from.getPlayers()) {
+//            for(Player p:gsToStartFrom.getPlayers()) {
 //                System.out.println("Resources P" + p.getID() + ": " + p.getResources());
 //            }
             System.out.println("Number of playouts: " + tree.visit_count);
@@ -301,7 +301,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         int bestIdx = -1;
         FusionRTSNode best = null;
         if (DEBUG>=2) {
-//            for(Player p:gs_to_start_from.getPlayers()) {
+//            for(Player p:gsToStartFrom.getPlayers()) {
 //                System.out.println("Resources P" + p.getID() + ": " + p.getResources());
 //            }
             System.out.println("Number of playouts: " + tree.visit_count);
@@ -341,7 +341,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     }
     
     public GameState getGameStateToStartFrom() {
-        return gs_to_start_from;
+        return gsToStartFrom;
     }
 
     // NEW: tree reuse
@@ -364,7 +364,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "(" + TIME_BUDGET + ", " + ITERATIONS_BUDGET + ", " + MAXSIMULATIONTIME + "," + MAX_TREE_DEPTH + "," + epsilon_l + ", " + discount_l + ", " + epsilon_g + ", " + discount_g + ", " + epsilon_0 + ", " + discount_0 + ", " + playoutPolicy + ", " + ef + ")";
+        return getClass().getSimpleName() + "(" + TIME_BUDGET + ", " + ITERATIONS_BUDGET + ", " + MAX_SIMULATION_TIME + "," + MAX_TREE_DEPTH + "," + epsilon_l + ", " + discount_l + ", " + epsilon_g + ", " + discount_g + ", " + epsilon_0 + ", " + discount_0 + ", " + playoutPolicy + ", " + ef + ")";
     }
     
     @Override
@@ -373,7 +373,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
                ", runs per action: " + (total_runs/(float)total_actions_issued) + 
                ", runs per cycle: " + (total_runs/(float)total_cycles_executed) + 
                ", average time per cycle: " + (total_time/(float)total_cycles_executed) + 
-               ", max branching factor: " + max_actions_so_far;
+               ", max branching factor: " + maxActionsSoFar;
     }
     
     
@@ -403,12 +403,12 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     
     
     public int getPlayoutLookahead() {
-        return MAXSIMULATIONTIME;
+        return MAX_SIMULATION_TIME;
     }
     
     
     public void setPlayoutLookahead(int a_pola) {
-        MAXSIMULATIONTIME = a_pola;
+        MAX_SIMULATION_TIME = a_pola;
     }
 
 

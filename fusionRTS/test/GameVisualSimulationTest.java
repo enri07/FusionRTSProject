@@ -13,6 +13,7 @@ import rts.GameState;
 import rts.PhysicalGameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
+import tests.MapGenerator;
 
  /**
  *
@@ -21,8 +22,9 @@ import rts.units.UnitTypeTable;
 public class GameVisualSimulationTest {
     public static void main(String[] args) throws Exception {
         UnitTypeTable utt = new UnitTypeTable();
-        PhysicalGameState pgs = PhysicalGameState.load("/D:/microRTS/microrts/maps/16x16/basesWorkers16x16.xml", utt);
-//        PhysicalGameState pgs = MapGenerator.basesWorkers8x8Obstacle();
+        MapGenerator mapGenerator = new MapGenerator(utt);
+        PhysicalGameState pgs = mapGenerator.basesWorkers8x8Obstacle();
+        //PhysicalGameState pgs = PhysicalGameState.load("../../microrts/maps/16x16/basesWorkers16x16.xml", utt);
 
         GameState gs = new GameState(pgs, utt);
         int MAXCYCLES = 5000;

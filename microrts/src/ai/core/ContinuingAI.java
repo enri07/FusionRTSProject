@@ -149,6 +149,15 @@ public class ContinuingAI extends AI {
     public void preGameAnalysis(GameState gs, long milliseconds) throws Exception
     {
         m_AI.preGameAnalysis(gs, milliseconds);
-    }    
-    
+    }
+
+    @Override
+    public String getTournamentColumnsStatistics() {
+        return m_AI.getTournamentColumnsStatistics();
+    }
+
+    @Override
+    public String getTournamentStatistics() {
+        return m_AI.getTournamentStatistics();
+    }
 }

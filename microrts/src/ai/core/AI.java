@@ -121,4 +121,11 @@ public abstract class AI {
     public void gameOver(int winner) throws Exception
     {
     }
+
+    public String getTournamentColumnsStatistics() {
+        return "";
+    }
+    public String getTournamentStatistics() {
+        return "";
+    }
 } 

@@ -17,13 +17,14 @@ import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
 import ai.core.InterruptibleAI;
+import tournaments.Tournament;
 
 /**
  *
  * @author santi
  */
 public class NaiveMCTS extends AIWithComputationBudget implements InterruptibleAI {
-    public static int DEBUG = 1;
+    public static int DEBUG = 0;
     public EvaluationFunction ef;
        
     Random r = new Random();
@@ -60,7 +61,8 @@ public class NaiveMCTS extends AIWithComputationBudget implements InterruptibleA
     public long total_cycles_executed = 0;
     public long total_actions_issued = 0;
     public long total_time = 0;
-    
+    public double avgTimeSimulation = 0;
+    public double avgDeepTree = 0;
     
     public NaiveMCTS(UnitTypeTable utt) {
         this(100,-1,100,10,
@@ -199,12 +201,31 @@ public class NaiveMCTS extends AIWithComputationBudget implements InterruptibleA
         // tree in the first iteration is composed by only the root!
         NaiveMCTSNode leaf = tree.selectLeaf(player, 1-player, epsilon_l, epsilon_g, epsilon_0, global_strategy, MAX_TREE_DEPTH, current_iteration++);
 
-        if (leaf!=null) {            
-            GameState gs2 = leaf.gs.clone();
-            simulate(gs2, gs2.getTime() + MAXSIMULATIONTIME); // Start the playout
 
-            int time = gs2.getTime() - gs_to_start_from.getTime();
-            double evaluation = ef.evaluate(player, 1-player, gs2)*Math.pow(0.99,time/10.0); // Evaluate final state
+        if (leaf!=null) {
+            GameState gs = leaf.gs.clone();
+            simulate(gs, gs.getTime() + MAXSIMULATIONTIME); // Start the playout
+
+            int time = gs.getTime() - gs_to_start_from.getTime();
+            double evaluation = ef.evaluate(player, 1-player, gs)*Math.pow(0.99,time/10.0); // Evaluate final state
+
+            //System.out.println("Before avgDeepTree:" + avgDeepTree + " leafDeepTree: " + leaf.depth + " avgTime:" + avgTimeSimulation + " time:" + time);
+            if(avgDeepTree > 0 && leaf.depth > 0) {
+                avgDeepTree = (leaf.depth + avgDeepTree)/2;
+            } else {
+                if(avgDeepTree == 0) {
+                    avgDeepTree = leaf.depth;
+                }
+            }
+
+            if(avgTimeSimulation > 0 && time > 0) {
+                avgTimeSimulation = (time + avgTimeSimulation)/2;
+            } else {
+                if(avgTimeSimulation == 0) {
+                    avgTimeSimulation = time;
+                }
+            }
+            //System.out.println("After avgDeepTree:" + avgDeepTree + " leafDeepTree: " + leaf.depth + " avgTime:" + avgTimeSimulation + " time:" + time);
 
             leaf.propagateEvaluation(evaluation,null); // Back propagate the result to parents           
 
@@ -331,7 +352,16 @@ public class NaiveMCTS extends AIWithComputationBudget implements InterruptibleA
                ", average time per cycle: " + (total_time/(float)total_cycles_executed) + 
                ", max branching factor: " + max_actions_so_far;
     }
-    
+
+    @Override
+    public String getTournamentColumnsStatistics() {
+        return "avgTimeSimulation" + Tournament.splitter + "avgDeepTree";
+    }
+
+    @Override
+    public String getTournamentStatistics() {
+        return avgTimeSimulation + Tournament.splitter + avgDeepTree;
+    }
     
     @Override
     public List<ParameterSpecification> getParameters() {

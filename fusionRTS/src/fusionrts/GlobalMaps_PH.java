@@ -19,47 +19,14 @@ import java.util.List;
  *
  */
 public class GlobalMaps_PH {
-    
-    // New pointer to the global structures used to implement the Progressive History technique
-    List<ExtendedUnitActionTableEntry> unitActionTable;
+
     // Link for each (unit type, x and y coordinates and player)  the corresponding 
     // entry in Global_unitActionTable
-    HashMap<NoIDKey, Integer> typeXYMap;
-    // Store also the maximum index of the list
-    int last_idx;
+    HashMap<NoIDKey, ExtendedUnitActionTableEntry> typeXYMap;
     
     // Initialize structures based on specific player and state
-    /*public GlobalMaps_PH(int a_player, GameState gs ) throws Exception {
-        PlayerActionGenerator MoveGenerator = new PlayerActionGenerator(gs, a_player);
-        
-        int idx = 0;
-        for (Pair<Unit, List<UnitAction>> choice : MoveGenerator.getChoices()) {
-            // m_a represents the actual unit selected
-            // m_b stores all the possible actions to be performed by m_a
-            ExtendedUnitActionTableEntry ae = new ExtendedUnitActionTableEntry();
-            ae.u = choice.m_a; 
-            ae.nactions = choice.m_b.size(); 
-            ae.actions = new ArrayList<>(choice.m_b);
-            ae.accumEvaluationList = new ArrayList<>();
-            ae.visitCountList = new ArrayList<>();
-            for (int i = 0; i < ae.nactions; i++) {
-                ae.accumEvaluationList.add(0.0);
-                ae.visitCountList.add(0);
-            }
-            unitActionTable.add(ae);
-            // Generate new key
-            NoIDKey newKey = new NoIDKey(ae.u);
-            
-            // Add a new entry in the hash map
-            typeXYMap.put(newKey,idx);
-            idx++;
-            }
-        last_idx = idx;
-    }*/
     
     public GlobalMaps_PH() {
-        // Nothing to do
-        unitActionTable = new ArrayList<>();
         typeXYMap = new LinkedHashMap<>();
     }
     
@@ -70,7 +37,7 @@ public class GlobalMaps_PH {
 
             if(typeXYMap.containsKey(newKey)) {
                 // Retrieve index of the unit in the list and actual entry
-                ExtendedUnitActionTableEntry ae = unitActionTable.get(typeXYMap.get(newKey));
+                ExtendedUnitActionTableEntry ae = typeXYMap.get(newKey);
 
                 // Retrieve index of particular action
                 int indexOfAction = ae.actions.indexOf(pair.m_b);
@@ -81,14 +48,13 @@ public class GlobalMaps_PH {
                     List<Double> acc_evaluation = ae.accumEvaluationList;
                     
                     // reset counter if the game went too far
-                    //    if (visitCountList.get(indexOfAction) > 5000 ){
-                    //        visitCountList.set(indexOfAction, 1);
-                    //        acc_evaluation.set(indexOfAction, evaluation);
-                    //    }
-                    //    else{
+                    if (visitCountList.get(indexOfAction) > 5000) {
+                        visitCountList.set(indexOfAction, 1);
+                        acc_evaluation.set(indexOfAction, evaluation);
+                    } else {
                             visitCountList.set(indexOfAction, visitCountList.get(indexOfAction) + 1);
                             acc_evaluation.set(indexOfAction, acc_evaluation.get(indexOfAction) + evaluation);
-                    //    }
+                    }
                 } else { // if the action is not present
                     // We are adding a new possible move for a particular unit
                     ae.actions.add(pair.m_b);
@@ -108,11 +74,7 @@ public class GlobalMaps_PH {
                 ae.visitCountList = new ArrayList<>();
                 ae.visitCountList.add(1);
 
-                unitActionTable.add(ae);
-                typeXYMap.put(newKey, last_idx);
-
-                // Update index counter
-                last_idx++;
+                typeXYMap.put(newKey, ae);
             }
         }
     }
@@ -127,7 +89,7 @@ public class GlobalMaps_PH {
 
             if(typeXYMap.containsKey(newKey)) {
                 // Retrieve index of the unit in the list and actual entry
-                ExtendedUnitActionTableEntry ae = unitActionTable.get(typeXYMap.get(newKey));
+                ExtendedUnitActionTableEntry ae = typeXYMap.get(newKey);
 
                 // Retrieve index of particular action
                 int indexOfAction = ae.actions.indexOf(pair.m_b);

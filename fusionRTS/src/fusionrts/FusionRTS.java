@@ -12,13 +12,13 @@ import ai.evaluation.EvaluationFunction;
 import ai.evaluation.SimpleSqrtEvaluationFunction3;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import ai.mcts.MCTSNode;
 import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
 import ai.core.InterruptibleAI;
+import tournaments.Tournament;
 
 /**
  *
@@ -27,7 +27,6 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public static int DEBUG = 0;
     public EvaluationFunction ef;
        
-    Random r = new Random();
     public AI playoutPolicy = new RandomBiasedAI();
     protected long maxActionsSoFar = 0;
     
@@ -61,6 +60,8 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public long total_cycles_executed = 0;
     public long total_actions_issued = 0;
     public long total_time = 0;
+    public long avgTimeSimulation = 0;
+    public long avgDeepTree = 0;
     
     // NEW: Progressive History enhancement
     public GlobalMaps_PH PHStructures;
@@ -72,8 +73,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         this(100,-1,100,10,
              0.3f, 0.0f, 0.4f,
              new RandomBiasedAI(), new SimpleSqrtEvaluationFunction3(), true);
-        
-                
+
         if (globalStrategy == FusionRTSNode.UCB1PH){
             PHStructures = new GlobalMaps_PH();
         }
@@ -113,23 +113,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         discount_0 = 1.0f;
         ef = a_ef;
         forceExplorationOfNonSampledActions = fensa;
-    }    
-    
-    public FusionRTS(int available_time, int max_playouts, int lookahead, int max_depth, float e_l, float e_g, float e_0, int a_globalStrategy, AI policy, EvaluationFunction a_ef, boolean fensa) {
-        super(available_time, max_playouts);
-        MAX_SIMULATION_TIME = lookahead;
-        playoutPolicy = policy;
-        MAX_TREE_DEPTH = max_depth;
-        initial_epsilon_l = epsilon_l = e_l;
-        initial_epsilon_g = epsilon_g = e_g;
-        initial_epsilon_0 = epsilon_0 = e_0;
-        discount_l = 1.0f;
-        discount_g = 1.0f;
-        discount_0 = 1.0f;
-        globalStrategy = a_globalStrategy;
-        ef = a_ef;
-        forceExplorationOfNonSampledActions = fensa;
-    }        
+    }
     
     public void reset() {
         tree = null;
@@ -183,15 +167,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         epsilon_l = initial_epsilon_l;
         epsilon_g = initial_epsilon_g;
         epsilon_0 = initial_epsilon_0;        
-    }    
-    
-    
-    public void resetSearch() {
-        if (DEBUG>=2) System.out.println("Resetting search...");
-        tree = null;
-        gsToStartFrom = null;
     }
-    
 
     public void computeDuringOneGameFrame() throws Exception {        
         if (DEBUG>=2) System.out.println("Search...");
@@ -222,7 +198,22 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
             GameState gs = leaf.gs.clone();
             simulate(gs, gs.getTime() + MAX_SIMULATION_TIME); // Playout
 
+            if(avgDeepTree > 0 && leaf.depth > 0) {
+                avgDeepTree = (leaf.depth + avgDeepTree)/2;
+            } else {
+                if(avgDeepTree == 0) {
+                    avgDeepTree = leaf.depth;
+                }
+            }
+
             int time = gs.getTime() - gsToStartFrom.getTime();
+            if(avgTimeSimulation > 0 && time > 0) {
+                avgTimeSimulation = (time + avgTimeSimulation)/2;
+            } else {
+                if(avgTimeSimulation == 0) {
+                    avgTimeSimulation = time;
+                }
+            }
             double evaluation = ef.evaluate(player, 1 - player, gs) * Math.pow(0.99, time/10.0); // Evaluate final state
 
             leaf.propagateEvaluation(evaluation,null); // Backpropagation          
@@ -272,9 +263,6 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         int bestIdx = -1;
         FusionRTSNode best = null;
         if (DEBUG>=2) {
-//            for(Player p:gsToStartFrom.getPlayers()) {
-//                System.out.println("Resources P" + p.getID() + ": " + p.getResources());
-//            }
             System.out.println("Number of playouts: " + tree.visit_count);
             tree.printUnitActionTable();
         }
@@ -293,55 +281,18 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         
         return bestIdx;
     }
-    
-    
-    public int getHighestEvaluationActionIdx() {
-        total_actions_issued++;
-            
-        int bestIdx = -1;
-        FusionRTSNode best = null;
-        if (DEBUG>=2) {
-//            for(Player p:gsToStartFrom.getPlayers()) {
-//                System.out.println("Resources P" + p.getID() + ": " + p.getResources());
-//            }
-            System.out.println("Number of playouts: " + tree.visit_count);
-            tree.printUnitActionTable();
-        }
-        for(int i = 0;i<tree.children.size();i++) {
-            FusionRTSNode child = (FusionRTSNode)tree.children.get(i);
-            if (DEBUG>=2) {
-                System.out.println("child " + tree.actions.get(i) + " explored " + child.visit_count + " Avg evaluation: " + (child.accum_evaluation/((double)child.visit_count)));
-            }
-//            if (best == null || (child.accum_evaluation/child.visit_count)>(best.accum_evaluation/best.visit_count)) {
-            if (best == null || (child.accum_evaluation/((double)child.visit_count))>(best.accum_evaluation/((double)best.visit_count))) {
-                best = child;
-                bestIdx = i;
-            }
-        }
-        
-        return bestIdx;
-    }
-    
         
     public void simulate(GameState gs, int time) throws Exception {
         boolean gameover = false;
 
-        do{
+        do {
             if (gs.isComplete()) {
                 gameover = gs.cycle();
             } else {
                 gs.issue(playoutPolicy.getAction(0, gs));
                 gs.issue(playoutPolicy.getAction(1, gs));
             }
-        }while(!gameover && gs.getTime()<time);   
-    }
-    
-    public FusionRTSNode getTree() {
-        return tree;
-    }
-    
-    public GameState getGameStateToStartFrom() {
-        return gsToStartFrom;
+        } while(!gameover && gs.getTime() < time);
     }
 
     // NEW: tree reuse
@@ -375,8 +326,16 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
                ", average time per cycle: " + (total_time/(float)total_cycles_executed) + 
                ", max branching factor: " + maxActionsSoFar;
     }
-    
-    
+    @Override
+    public String getTournamentColumnsStatistics() {
+        return "avgTimeSimulation" + Tournament.splitter + "avgDeepTree";
+    }
+
+    @Override
+    public String getTournamentStatistics() {
+        return avgTimeSimulation + Tournament.splitter + avgDeepTree;
+    }
+
     @Override
     public List<ParameterSpecification> getParameters() {
         List<ParameterSpecification> parameters = new ArrayList<>();
@@ -399,115 +358,5 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         parameters.add(new ParameterSpecification("ForceExplorationOfNonSampledActions",boolean.class,true));
         
         return parameters;
-    }    
-    
-    
-    public int getPlayoutLookahead() {
-        return MAX_SIMULATION_TIME;
     }
-    
-    
-    public void setPlayoutLookahead(int a_pola) {
-        MAX_SIMULATION_TIME = a_pola;
-    }
-
-
-    public int getMaxTreeDepth() {
-        return MAX_TREE_DEPTH;
-    }
-    
-    
-    public void setMaxTreeDepth(int a_mtd) {
-        MAX_TREE_DEPTH = a_mtd;
-    }
-    
-    
-    public float getE_l() {
-        return epsilon_l;
-    }
-    
-    
-    public void setE_l(float a_e_l) {
-        epsilon_l = a_e_l;
-    }
-
-
-    public float getDiscount_l() {
-        return discount_l;
-    }
-    
-    
-    public void setDiscount_l(float a_discount_l) {
-        discount_l = a_discount_l;
-    }
-
-
-    public float getE_g() {
-        return epsilon_g;
-    }
-    
-    
-    public void setE_g(float a_e_g) {
-        epsilon_g = a_e_g;
-    }
-
-
-    public float getDiscount_g() {
-        return discount_g;
-    }
-    
-    
-    public void setDiscount_g(float a_discount_g) {
-        discount_g = a_discount_g;
-    }
-
-
-    public float getE_0() {
-        return epsilon_0;
-    }
-    
-    
-    public void setE_0(float a_e_0) {
-        epsilon_0 = a_e_0;
-    }
-
-
-    public float getDiscount_0() {
-        return discount_0;
-    }
-    
-    
-    public void setDiscount_0(float a_discount_0) {
-        discount_0 = a_discount_0;
-    }
-    
-    
-    
-    public AI getDefaultPolicy() {
-        return playoutPolicy;
-    }
-    
-    
-    public void setDefaultPolicy(AI a_dp) {
-        playoutPolicy = a_dp;
-    }
-    
-    
-    public EvaluationFunction getEvaluationFunction() {
-        return ef;
-    }
-    
-    
-    public void setEvaluationFunction(EvaluationFunction a_ef) {
-        ef = a_ef;
-    }
-    
-    public boolean getForceExplorationOfNonSampledActions() {
-        return forceExplorationOfNonSampledActions;
-    }
-    
-    public void setForceExplorationOfNonSampledActions(boolean fensa)
-    {
-        forceExplorationOfNonSampledActions = fensa;
-    }    
 }

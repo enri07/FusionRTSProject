@@ -26,10 +26,12 @@ import java.util.zip.ZipOutputStream;
 /**
  * @author douglasrizzo
  */
-class Tournament {
+public class Tournament {
 
     private static int TIMEOUT_CHECK_TOLERANCE = 20;
     private static boolean USE_CONTINUING_ON_INTERRUPTIBLE = true;
+
+    public static final String splitter = "\t";
 
     List<AI> AIs;
     List<AI> opponentAIs;
@@ -242,8 +244,25 @@ class Tournament {
         ai1.gameOver(winner);
         ai2.gameOver(winner);
 
-        out.write(iteration + "\t" + map_idx + "\t" + ai1_idx + "\t" + ai2_idx + "\t"
-                + gs.getTime() + "\t" + winner + "\t" + crashed + "\t" + timedout + "\n");
+        out.write(iteration + splitter + map_idx + splitter + ai1_idx + splitter + ai2_idx + splitter
+                + gs.getTime() + splitter + winner + splitter + crashed + splitter + timedout + "\n");
+
+        //region Extra statistics
+        if(!ai1.getTournamentColumnsStatistics().isEmpty() || !ai2.getTournamentColumnsStatistics().isEmpty()) {
+            out.write("Extra Statistics\n");
+        }
+
+        if(!ai1.getTournamentColumnsStatistics().isEmpty()) {
+            out.write(ai1.getTournamentColumnsStatistics() + "\n");
+            out.write(ai1.getTournamentStatistics() + "\n");
+        }
+
+        if(!ai2.getTournamentColumnsStatistics().isEmpty()) {
+            out.write(ai2.getTournamentColumnsStatistics() + "\n");
+            out.write(ai2.getTournamentStatistics() + "\n");
+        }
+        //endregion
+
         out.flush();
         if (progress != null) {
             progress.write("Winner: " + winner + "  in " + gs.getTime() + " cycles\n");
@@ -286,49 +305,49 @@ class Tournament {
         out.write("Wins:\n");
         for (int ai1_idx = 0; ai1_idx < AIs.size(); ai1_idx++) {
             for (int ai2_idx = 0; ai2_idx < opponentAIs.size(); ai2_idx++) {
-                out.write(wins[ai1_idx][ai2_idx] + "\t");
+                out.write(wins[ai1_idx][ai2_idx] + splitter);
             }
             out.write("\n");
         }
         out.write("Ties:\n");
         for (int ai1_idx = 0; ai1_idx < AIs.size(); ai1_idx++) {
             for (int ai2_idx = 0; ai2_idx < opponentAIs.size(); ai2_idx++) {
-                out.write(ties[ai1_idx][ai2_idx] + "\t");
+                out.write(ties[ai1_idx][ai2_idx] + splitter);
             }
             out.write("\n");
         }
         out.write("Average Game Length:\n");
         for (int ai1_idx = 0; ai1_idx < AIs.size(); ai1_idx++) {
             for (int ai2_idx = 0; ai2_idx < opponentAIs.size(); ai2_idx++) {
-                out.write(accumTime[ai1_idx][ai2_idx] / (maps.size() * iterations) + "\t");
+                out.write(accumTime[ai1_idx][ai2_idx] / (maps.size() * iterations) + splitter);
             }
             out.write("\n");
         }
         out.write("AI crashes:\n");
         for (int ai1_idx = 0; ai1_idx < AIs.size(); ai1_idx++) {
             for (int ai2_idx = 0; ai2_idx < opponentAIs.size(); ai2_idx++) {
-                out.write(AIcrashes[ai1_idx][ai2_idx] + "\t");
+                out.write(AIcrashes[ai1_idx][ai2_idx] + splitter);
             }
             out.write("\n");
         }
         out.write("opponent AI crashes:\n");
         for (int ai1_idx = 0; ai1_idx < AIs.size(); ai1_idx++) {
             for (int ai2_idx = 0; ai2_idx < opponentAIs.size(); ai2_idx++) {
-                out.write(opponentAIcrashes[ai1_idx][ai2_idx] + "\t");
+                out.write(opponentAIcrashes[ai1_idx][ai2_idx] + splitter);
             }
             out.write("\n");
         }
         out.write("AI timeout:\n");
         for (int ai1_idx = 0; ai1_idx < AIs.size(); ai1_idx++) {
             for (int ai2_idx = 0; ai2_idx < opponentAIs.size(); ai2_idx++) {
-                out.write(AItimeout[ai1_idx][ai2_idx] + "\t");
+                out.write(AItimeout[ai1_idx][ai2_idx] + splitter);
             }
             out.write("\n");
         }
         out.write("opponent AI timeout:\n");
         for (int ai1_idx = 0; ai1_idx < AIs.size(); ai1_idx++) {
             for (int ai2_idx = 0; ai2_idx < opponentAIs.size(); ai2_idx++) {
-                out.write(opponentAItimeout[ai1_idx][ai2_idx] + "\t");
+                out.write(opponentAItimeout[ai1_idx][ai2_idx] + splitter);
             }
             out.write("\n");
         }

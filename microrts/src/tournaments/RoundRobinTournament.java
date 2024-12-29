@@ -49,22 +49,24 @@ public class RoundRobinTournament extends Tournament{
         out.write(getClass().getName()+"\n");
         out.write("AIs\n");
         for (AI ai : AIs) {
-            out.write("\t" + ai.toString() + "\n");
+            out.write(splitter + ai.toString() + "\n");
         }
         out.write("maps\n");
         for (String map : maps) {
-            out.write("\t" + map + "\n");
+            out.write(splitter + map + "\n");
         }
-        out.write("iterations\t" + iterations + "\n");
-        out.write("maxGameLength\t" + maxGameLength + "\n");
-        out.write("timeBudget\t" + timeBudget + "\n");
-        out.write("iterationsBudget\t" + iterationsBudget + "\n");
-        out.write("pregameAnalysisBudget\t" + preAnalysisBudgetFirstTimeInAMap + "\t" + preAnalysisBudgetRestOfTimes + "\n");
-        out.write("preAnalysis\t" + preAnalysis + "\n");
-        out.write("fullObservability\t" + fullObservability + "\n");
-        out.write("timeoutCheck\t" + timeoutCheck + "\n");
-        out.write("runGC\t" + runGC + "\n");
-        out.write("iteration\tmap\tai1\tai2\ttime\twinner\tcrashed\ttimedout\n");
+        out.write("iterations" + splitter + iterations + "\n");
+        out.write("maxGameLength" + splitter + maxGameLength + "\n");
+        out.write("timeBudget" + splitter + timeBudget + "\n");
+        out.write("iterationsBudget" + splitter + iterationsBudget + "\n");
+        out.write("pregameAnalysisBudget" + splitter + preAnalysisBudgetFirstTimeInAMap + splitter + preAnalysisBudgetRestOfTimes + "\n");
+        out.write("preAnalysis" + splitter + preAnalysis + "\n");
+        out.write("fullObservability" + splitter + fullObservability + "\n");
+        out.write("timeoutCheck" + splitter + timeoutCheck + "\n");
+        out.write("runGC" + splitter + runGC + "\n");
+        out.write("iteration" + splitter + "map" + splitter + "ai1" + splitter + "ai2" + splitter
+                + "time" + splitter + "winner" + splitter + "crashed"
+                + splitter + "timedout" + "\n");
         out.flush();
         
         // create all the read/write folders:

@@ -127,20 +127,6 @@ public class FusionRTSNode extends MCTSNode {
         if (unitActionTable == null) return this;
         if (depth>=max_depth) return this;
 
-        /*
-        // DEBUG:
-        for(PlayerAction a:actions) {
-            for(Pair<Unit,UnitAction> tmp:a.getActions()) {
-                if (!gs.getUnits().contains(tmp.m_a)) new Error("DEBUG!!!!");
-                boolean found = false;
-                for(UnitActionTableEntry e:unitActionTable) {
-                    if (e.u == tmp.m_a) found = true;
-                }
-                if (!found) new Error("DEBUG 2!!!!!");
-            }
-        }
-        */
-
         // In the first iteration no child is initialized, thus we will go straight to else (LocalMABS).
         // In following iteration (without considering the second term) we have a path already constructed.
         if (!children.isEmpty() && r.nextFloat() >= epsilon_0) {
@@ -198,7 +184,6 @@ public class FusionRTSNode extends MCTSNode {
             } else {
                 exploitation = (evaluation_bound - exploitation)/(2*evaluation_bound);
             }
-    //            System.out.println(exploitation + " + " + exploration);
 
             double tmp = C*exploitation + exploration;
             if (best==null || tmp>bestScore) {
@@ -223,7 +208,7 @@ public class FusionRTSNode extends MCTSNode {
 
             // New part given by PH enhancement
             // Retrieve sa/na
-            double hist_bias = globalStructuresPH.get_statistic(fusion_node.unitActionList);
+            double hist_bias = globalStructuresPH.getValueImpactAction(fusion_node.unitActionList);
 
             // type == 1 means that this is a node where we are exploring action
             // of the opponent player. Thus, we want to MINIMIZE the expectation
@@ -312,11 +297,11 @@ public class FusionRTSNode extends MCTSNode {
 
             notSampledYet.add(distributions.size());
             distributions.add(dist);
-            // in dist we have the preference for eacu unit and each action.
-            // In distributions we have the dist of all the units
+            // in dist we have the preference for each unit and each action.
+            // In distributions, we have the dist of all the units
         }
 
-        // Select the best combination that results in a valid playeraction by epsilon-greedy sampling:
+        // Select the best combination that results in a valid player action by epsilon-greedy sampling:
         ResourceUsage base_ru = new ResourceUsage();
         for(Unit u:gs.getUnits()) {
             UnitAction ua = gs.getUnitAction(u);

@@ -23,7 +23,10 @@ public class GlobalMaps_PH {
     // Link for each (unit type, x and y coordinates and player)  the corresponding 
     // entry in Global_unitActionTable
     HashMap<NoIDKey, ExtendedUnitActionTableEntry> typeXYMap;
-    
+
+    // this is a test for understand if there should be any improvements with this feature
+    boolean IS_ENABLE_RESET_VISIT_COUNT = false;
+    int RESET_VISIT_COUNT_UPPER_BOUND = 5000;
     // Initialize structures based on specific player and state
     
     public GlobalMaps_PH() {
@@ -48,7 +51,7 @@ public class GlobalMaps_PH {
                     List<Double> acc_evaluation = ae.accumEvaluationList;
                     
                     // reset counter if the game went too far
-                    if (visitCountList.get(indexOfAction) > 5000) {
+                    if (visitCountList.get(indexOfAction) > RESET_VISIT_COUNT_UPPER_BOUND && IS_ENABLE_RESET_VISIT_COUNT) {
                         visitCountList.set(indexOfAction, 1);
                         acc_evaluation.set(indexOfAction, evaluation);
                     } else {
@@ -79,7 +82,7 @@ public class GlobalMaps_PH {
         }
     }
     
-    public double get_statistic(List<Pair<Unit, UnitAction>> unit_action_list) {
+    public double getValueImpactAction(List<Pair<Unit, UnitAction>> unit_action_list) {
         // Function used ot evaluate sa/na
         double meanEvaluation = 0;
         double meanVisits = 0;
@@ -109,9 +112,16 @@ public class GlobalMaps_PH {
                 System.err.println("GlobalMaps_PH: This should not have happened...");
             }
         }
-        // double statistic = meanEvaluation/meanVisits;
-        // System.out.println("Evaluation = " + meanEvaluation + "Visits = " + meanVisits);
-        
+
         return meanEvaluation/meanVisits;
     }
+
+    public String getColumnsStatistic() {
+        return "";
+    }
+
+    public String getStatistic() {
+        return "";
+    }
+
 }

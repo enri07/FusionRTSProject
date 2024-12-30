@@ -55,7 +55,7 @@ public class NoIDKey {
     @Override
     public String toString() {
         return "NoIDKey{" +
-                "unitType= " + unitType.getClass().getName() +
+                "unitType= " + unitType.name +
                 ", x= " + x +
                 ", y= " + y +
                 ", player= " + player +

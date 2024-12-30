@@ -10,9 +10,7 @@ import ai.core.AIWithComputationBudget;
 import ai.core.ParameterSpecification;
 import ai.evaluation.EvaluationFunction;
 import ai.evaluation.SimpleSqrtEvaluationFunction3;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import rts.GameState;
 import rts.PlayerAction;
 import rts.units.UnitTypeTable;
@@ -63,12 +61,14 @@ public class NaiveMCTS extends AIWithComputationBudget implements InterruptibleA
     public long total_time = 0;
     public double avgTimeSimulation = 0;
     public double avgDeepTree = 0;
-    
+    HashMap<String,Integer> statisticsVisitActions;
+
     public NaiveMCTS(UnitTypeTable utt) {
         this(100,-1,100,10,
              0.3f, 0.0f, 0.4f,
              new RandomBiasedAI(),
              new SimpleSqrtEvaluationFunction3(), true);
+        testMap();
     }    
     
     
@@ -90,6 +90,7 @@ public class NaiveMCTS extends AIWithComputationBudget implements InterruptibleA
         discount_0 = discout_0;
         ef = a_ef;
         forceExplorationOfNonSampledActions = fensa;
+        testMap();
     }    
 
     public NaiveMCTS(int available_time, int max_playouts, int lookahead, int max_depth, float e_l, float e_g, float e_0, AI policy, EvaluationFunction a_ef, boolean fensa) {
@@ -105,6 +106,7 @@ public class NaiveMCTS extends AIWithComputationBudget implements InterruptibleA
         discount_0 = 1.0f;
         ef = a_ef;
         forceExplorationOfNonSampledActions = fensa;
+        testMap();
     }    
     
     public NaiveMCTS(int available_time, int max_playouts, int lookahead, int max_depth, float e_l, float e_g, float e_0, int a_global_strategy, AI policy, EvaluationFunction a_ef, boolean fensa) {
@@ -121,8 +123,15 @@ public class NaiveMCTS extends AIWithComputationBudget implements InterruptibleA
         global_strategy = a_global_strategy;
         ef = a_ef;
         forceExplorationOfNonSampledActions = fensa;
+        testMap();
     }        
-    
+
+    private void testMap() {
+        statisticsVisitActions = new LinkedHashMap<>();
+        /*statisticsVisitActions.put("test1", 10);
+        statisticsVisitActions.put("test2", 20);
+        statisticsVisitActions.put("test3", 30);*/
+    }
     public void reset() {
         tree = null;
         gs_to_start_from = null;
@@ -355,12 +364,12 @@ public class NaiveMCTS extends AIWithComputationBudget implements InterruptibleA
 
     @Override
     public String getTournamentColumnsStatistics() {
-        return "avgTimeSimulation" + Tournament.splitter + "avgDeepTree";
+        return "avgTimeSimulation" + Tournament.splitter + "avgDeepTree" + Tournament.splitter + String.join(Tournament.splitter, statisticsVisitActions.keySet());
     }
 
     @Override
     public String getTournamentStatistics() {
-        return avgTimeSimulation + Tournament.splitter + avgDeepTree;
+        return avgTimeSimulation + Tournament.splitter + avgDeepTree + Tournament.splitter + String.join(Tournament.splitter, statisticsVisitActions.values().stream().map((Object::toString)).toList());
     }
     
     @Override

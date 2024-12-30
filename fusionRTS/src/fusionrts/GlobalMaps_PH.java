@@ -23,7 +23,8 @@ public class GlobalMaps_PH {
     // Link for each (unit type, x and y coordinates and player)  the corresponding 
     // entry in Global_unitActionTable
     HashMap<NoIDKey, ExtendedUnitActionTableEntry> typeXYMap;
-
+    //player-typeUnit-action-direction -> num
+    HashMap<String, Integer> statisticsVisitActions;
     // this is a test for understand if there should be any improvements with this feature
     boolean IS_ENABLE_RESET_VISIT_COUNT = false;
     int RESET_VISIT_COUNT_UPPER_BOUND = 5000;
@@ -31,12 +32,19 @@ public class GlobalMaps_PH {
     
     public GlobalMaps_PH() {
         typeXYMap = new LinkedHashMap<>();
+        statisticsVisitActions = new LinkedHashMap<>();
     }
     
     public void update(List<Pair<Unit, UnitAction>> unitActionList, double evaluation) {
         for(Pair<Unit, UnitAction> pair : unitActionList) {
             
-            NoIDKey newKey = new NoIDKey(pair.m_a); 
+            NoIDKey newKey = new NoIDKey(pair.m_a);
+            String statisticKey = getStatisticKey(pair);
+            if(statisticsVisitActions.containsKey(statisticKey)) {
+                statisticsVisitActions.put(statisticKey, statisticsVisitActions.get(statisticKey) + 1);
+            } else {
+                statisticsVisitActions.put(statisticKey, 1);
+            }
 
             if(typeXYMap.containsKey(newKey)) {
                 // Retrieve index of the unit in the list and actual entry
@@ -49,7 +57,7 @@ public class GlobalMaps_PH {
                     // Update counter and evaluation of the action
                     List<Integer> visitCountList = ae.visitCountList;
                     List<Double> acc_evaluation = ae.accumEvaluationList;
-                    
+
                     // reset counter if the game went too far
                     if (visitCountList.get(indexOfAction) > RESET_VISIT_COUNT_UPPER_BOUND && IS_ENABLE_RESET_VISIT_COUNT) {
                         visitCountList.set(indexOfAction, 1);
@@ -64,7 +72,7 @@ public class GlobalMaps_PH {
                     ae.nactions++;
                     ae.accumEvaluationList.add(evaluation);
                     ae.visitCountList.add(1);
-                } 
+                }
             } else {
                 // We are adding a new entry to the list
                 ExtendedUnitActionTableEntry ae = new ExtendedUnitActionTableEntry();
@@ -81,7 +89,26 @@ public class GlobalMaps_PH {
             }
         }
     }
-    
+
+    private static String getStatisticKey(Pair<Unit, UnitAction> pair) {
+        String statisticKey = pair.m_a.getPlayer() + "-" + pair.m_a.getType().name + "-" + pair.m_b.getActionName();
+        if(pair.m_b.getDirection() != UnitAction.DIRECTION_NONE) {
+            if (pair.m_b.getDirection() == UnitAction.DIRECTION_UP) {
+                statisticKey += "-up";
+            }
+            if (pair.m_b.getDirection() == UnitAction.DIRECTION_RIGHT) {
+                statisticKey += "-right";
+            }
+            if (pair.m_b.getDirection() == UnitAction.DIRECTION_DOWN) {
+                statisticKey += "-down";
+            }
+            if (pair.m_b.getDirection() == UnitAction.DIRECTION_LEFT) {
+                statisticKey += "-left";
+            }
+        }
+        return statisticKey;
+    }
+
     public double getValueImpactAction(List<Pair<Unit, UnitAction>> unit_action_list) {
         // Function used ot evaluate sa/na
         double meanEvaluation = 0;
@@ -115,13 +142,4 @@ public class GlobalMaps_PH {
 
         return meanEvaluation/meanVisits;
     }
-
-    public String getColumnsStatistic() {
-        return "";
-    }
-
-    public String getStatistic() {
-        return "";
-    }
-
 }

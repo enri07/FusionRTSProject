@@ -65,7 +65,6 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     
     // NEW: Progressive History enhancement
     public GlobalMaps_PH PHStructures;
-
     // NEW: Tree Reuse enhancement
     public FusionRTSNode rootToBeReused = null;
 
@@ -293,6 +292,24 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
                 gs.issue(playoutPolicy.getAction(1, gs));
             }
         } while(!gameover && gs.getTime() < time);
+
+        /*for(String key : PHStructures.statisticsVisitActions.keySet()) {
+            System.out.println(key);
+            System.out.println(PHStructures.statisticsVisitActions.get(key));
+            System.out.println("##############################################");
+        }
+        for(NoIDKey key : PHStructures.typeXYMap.keySet()) {
+            System.out.println(key.toString());
+            ExtendedUnitActionTableEntry entry = PHStructures.typeXYMap.get(key);
+            System.out.println(entry.u.toString());
+            System.out.println(entry.nactions);
+            System.out.println(entry.accumEvaluationList);
+            System.out.println(entry.visitCountList);
+            for(UnitAction action : entry.actions) {
+                System.out.println(action.toString());
+            }
+            System.out.println("##############################################");
+        }*/
     }
 
     // NEW: tree reuse
@@ -328,12 +345,12 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     }
     @Override
     public String getTournamentColumnsStatistics() {
-        return "avgTimeSimulation" + Tournament.splitter + "avgDeepTree";
+        return "avgTimeSimulation" + Tournament.splitter + "avgDeepTree" + Tournament.splitter + PHStructures.statisticsVisitActions.keySet().stream().map((String key) -> key + Tournament.splitter).toString();
     }
 
     @Override
     public String getTournamentStatistics() {
-        return avgTimeSimulation + Tournament.splitter + avgDeepTree;
+        return avgTimeSimulation + Tournament.splitter + avgDeepTree + Tournament.splitter + PHStructures.statisticsVisitActions.values().stream().map((Integer value) -> value + Tournament.splitter).toString();
     }
 
     @Override

@@ -27,7 +27,7 @@ public class GlobalMaps_PH {
     HashMap<String, Integer> statisticsVisitActions;
     // this is a test for understand if there should be any improvements with this feature
     boolean IS_ENABLE_RESET_VISIT_COUNT = false;
-    int RESET_VISIT_COUNT_UPPER_BOUND = 5000;
+    float RESET_VISIT_COUNT_UPPER_BOUND = Float.POSITIVE_INFINITY;
     // Initialize structures based on specific player and state
     
     public GlobalMaps_PH() {

@@ -52,7 +52,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public float discount_l = 0.999f;
     public float discount_g = 0.999f;
     
-    public int globalStrategy = FusionRTSNode.UCB1PH;
+    public int globalStrategy = FusionRTSNode.UCB1;
     public boolean forceExplorationOfNonSampledActions = true;
     
     // statistics:
@@ -64,18 +64,29 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     public long avgDeepTree = 0;
     
     // NEW: Progressive History enhancement
+    public boolean PH_enabled = false;
     public GlobalMaps_PH PHStructures;
     // NEW: Tree Reuse enhancement
+    public boolean TR_enabled = false;
     public FusionRTSNode rootToBeReused = null;
+    // NEW: AWLM heuristic
+    public boolean AWLM_enabled = false;
 
     public FusionRTS(UnitTypeTable utt) {
         this(100,-1,100,10,
              0.3f, 0.0f, 0.4f,
-             new RandomBiasedAI(), new SimpleSqrtEvaluationFunction3(), true);
+             new RandomBiasedAI(), new SimpleSqrtEvaluationFunction3(), true,
+             false, false, false);
+    }
 
-        if (globalStrategy == FusionRTSNode.UCB1PH){
-            PHStructures = new GlobalMaps_PH();
-        }
+    // Specific build function to determine which enanchment we want to enable
+    public FusionRTS(UnitTypeTable utt, boolean PH_flag, boolean TR_flag,
+            boolean heuristic_flag ) {
+        this(100,-1,100,10,
+             0.3f, 0.0f, 0.4f,
+             new RandomBiasedAI(), new SimpleSqrtEvaluationFunction3(), true,
+             PH_flag, TR_flag, heuristic_flag);
+        
     }    
     
     
@@ -84,7 +95,8 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
                                float e_g, float discout_g, 
                                float e_0, float discout_0, 
                                AI policy, EvaluationFunction a_ef,
-                               boolean fensa) {
+                               boolean fensa, boolean PH_flag, boolean TR_flag,
+                               boolean AWLM_flag) {
         super(available_time, max_playouts);
         MAX_SIMULATION_TIME = lookahead;
         playoutPolicy = policy;
@@ -97,9 +109,34 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         discount_0 = discout_0;
         ef = a_ef;
         forceExplorationOfNonSampledActions = fensa;
+        
+        // Set the enanchments to be used
+        
+        // Progressive history
+        if ( PH_flag == true ){
+            globalStrategy = FusionRTSNode.UCB1PH;
+            PHStructures = new GlobalMaps_PH();
+        }
+        else{
+            globalStrategy = FusionRTSNode.UCB1;
+        }
+        
+        // Tree reuse
+        if ( TR_flag == true ){
+            TR_enabled = true;
+        }
+        
+        // AWLM heuristic
+        if( AWLM_flag == true ){
+            ef = new AWLM_EvaluationFunction();
+        }
     }    
 
-    public FusionRTS(int available_time, int max_playouts, int lookahead, int max_depth, float e_l, float e_g, float e_0, AI policy, EvaluationFunction a_ef, boolean fensa) {
+    public FusionRTS(int available_time, int max_playouts, int lookahead, int max_depth, 
+                            float e_l, float e_g, float e_0, 
+                            AI policy, EvaluationFunction a_ef, 
+                            boolean fensa, boolean PH_flag, boolean TR_flag,
+                            boolean AWLM_flag) {
         super(available_time, max_playouts);
         MAX_SIMULATION_TIME = lookahead;
         playoutPolicy = policy;
@@ -112,6 +149,27 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         discount_0 = 1.0f;
         ef = a_ef;
         forceExplorationOfNonSampledActions = fensa;
+        
+        // Set the enanchments to be used
+        
+        // Progressive history
+        if ( PH_flag == true ){
+            globalStrategy = FusionRTSNode.UCB1PH;
+            PHStructures = new GlobalMaps_PH();
+        }
+        else{
+            globalStrategy = FusionRTSNode.UCB1;
+        }
+        
+        // Tree reuse
+        if ( TR_flag == true ){
+            TR_enabled = true;
+        }
+        
+        // AWLM heuristic
+        if( AWLM_flag == true ){
+            ef = new AWLM_EvaluationFunction();
+        }
     }
     
     public void reset() {
@@ -126,7 +184,10 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         
     
     public AI clone() {
-        return new FusionRTS(TIME_BUDGET, ITERATIONS_BUDGET, MAX_SIMULATION_TIME, MAX_TREE_DEPTH, epsilon_l, discount_l, epsilon_g, discount_g, epsilon_0, discount_0, playoutPolicy, ef, forceExplorationOfNonSampledActions);
+        return new FusionRTS(TIME_BUDGET, ITERATIONS_BUDGET, MAX_SIMULATION_TIME, 
+                MAX_TREE_DEPTH, epsilon_l, discount_l, epsilon_g, discount_g, 
+                epsilon_0, discount_0, playoutPolicy, ef, forceExplorationOfNonSampledActions,
+                PH_enabled, TR_enabled, AWLM_enabled);
     }    
     
     
@@ -246,11 +307,13 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         }
 
         // NEW: tree reuse enhancement
-        FusionRTSNode best = (FusionRTSNode) tree.children.get(idx);
-        // Remove parent connection
-        best.parent = null;
-        best.depth = 0;
-        rootToBeReused = best;
+        if( TR_enabled ){
+            FusionRTSNode best = (FusionRTSNode) tree.children.get(idx);
+            // Remove parent connection
+            best.parent = null;
+            best.depth = 0;
+            rootToBeReused = best;
+        }
 
         return tree.actions.get(idx);
     }
@@ -374,6 +437,165 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
 
         parameters.add(new ParameterSpecification("ForceExplorationOfNonSampledActions",boolean.class,true));
         
+        parameters.add(new ParameterSpecification("PH_Flag",boolean.class,false));
+        parameters.add(new ParameterSpecification("TR_Flag",boolean.class,false));
+        parameters.add(new ParameterSpecification("AWLM_Flag",boolean.class,false));
+        
         return parameters;
     }
+    
+    public int getPlayoutLookahead() {
+        return MAX_SIMULATION_TIME;
+    }
+    
+    
+    public void setPlayoutLookahead(int a_pola) {
+        MAX_SIMULATION_TIME = a_pola;
+    }
+
+
+    public int getMaxTreeDepth() {
+        return MAX_TREE_DEPTH;
+    }
+    
+    
+    public void setMaxTreeDepth(int a_mtd) {
+        MAX_TREE_DEPTH = a_mtd;
+    }
+    
+    
+    public float getE_l() {
+        return epsilon_l;
+    }
+    
+    
+    public void setE_l(float a_e_l) {
+        epsilon_l = a_e_l;
+    }
+
+
+    public float getDiscount_l() {
+        return discount_l;
+    }
+    
+    
+    public void setDiscount_l(float a_discount_l) {
+        discount_l = a_discount_l;
+    }
+
+
+    public float getE_g() {
+        return epsilon_g;
+    }
+    
+    
+    public void setE_g(float a_e_g) {
+        epsilon_g = a_e_g;
+    }
+
+
+    public float getDiscount_g() {
+        return discount_g;
+    }
+    
+    
+    public void setDiscount_g(float a_discount_g) {
+        discount_g = a_discount_g;
+    }
+
+
+    public float getE_0() {
+        return epsilon_0;
+    }
+    
+    
+    public void setE_0(float a_e_0) {
+        epsilon_0 = a_e_0;
+    }
+
+
+    public float getDiscount_0() {
+        return discount_0;
+    }
+    
+    
+    public void setDiscount_0(float a_discount_0) {
+        discount_0 = a_discount_0;
+    }
+    
+    
+    
+    public AI getDefaultPolicy() {
+        return playoutPolicy;
+    }
+    
+    
+    public void setDefaultPolicy(AI a_dp) {
+        playoutPolicy = a_dp;
+    }
+    
+    
+    public EvaluationFunction getEvaluationFunction() {
+        return ef;
+    }
+    
+    
+    public void setEvaluationFunction(EvaluationFunction a_ef) {
+        ef = a_ef;
+    }
+    
+    public boolean getForceExplorationOfNonSampledActions() {
+        return forceExplorationOfNonSampledActions;
+    }
+    
+    public void setForceExplorationOfNonSampledActions(boolean fensa)
+    {
+        forceExplorationOfNonSampledActions = fensa;
+    }
+
+    public boolean getPH_Flag() {
+        return PH_enabled;
+    }
+    
+    public void setPH_Flag(boolean flag)
+    {
+        PH_enabled = flag;
+        
+        // Progressive history
+        if ( flag == true ){
+            globalStrategy = FusionRTSNode.UCB1PH;
+            PHStructures = new GlobalMaps_PH();
+        }
+        else{
+            globalStrategy = FusionRTSNode.UCB1;
+        }
+    }  
+    
+    public boolean getTR_Flag() {
+        return TR_enabled;
+    }
+    
+    public void setTR_Flag(boolean flag)
+    {
+        TR_enabled = flag;
+        
+        // Tree reuse
+        if ( flag == true ){
+            TR_enabled = true;
+        }
+    }  
+    
+    public boolean getAWLM_Flag() {
+        return AWLM_enabled;
+    }
+    
+    public void setAWLM_Flag(boolean flag)
+    {
+        AWLM_enabled = flag;
+        
+        // AWLM heuristic
+        if( flag == true ){
+            ef = new AWLM_EvaluationFunction();
+        }
+    }  
 }

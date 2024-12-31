@@ -2,9 +2,11 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
+
 import ai.core.AI;
 import ai.abstraction.LightRush;
 import ai.abstraction.pathfinding.BFSPathFinding;
+import ai.mcts.naivemcts.NaiveMCTS;
 import fusionrts.FusionRTS;
 import gui.PhysicalGameStatePanel;
 
@@ -23,16 +25,21 @@ public class GameVisualSimulationTest {
     public static void main(String[] args) throws Exception {
         UnitTypeTable utt = new UnitTypeTable();
         MapGenerator mapGenerator = new MapGenerator(utt);
-        PhysicalGameState pgs = mapGenerator.basesWorkers8x8Obstacle();
-        //PhysicalGameState pgs = PhysicalGameState.load("../../microrts/maps/16x16/basesWorkers16x16.xml", utt);
+        //PhysicalGameState pgs = mapGenerator.basesWorkers8x8Obstacle();
+        PhysicalGameState pgs = PhysicalGameState.load("../../microrts/maps/16x16/basesWorkers16x16.xml", utt);
 
         GameState gs = new GameState(pgs, utt);
         int MAXCYCLES = 5000;
         int PERIOD = 20;
         boolean gameover = false;
         
-        AI ai1 = new FusionRTS(utt);     
-        AI ai2 = new LightRush(utt, new BFSPathFinding());
+        // Here you can enable the different enanchment by using the respective boolean flags:
+        //  - Progressive History;
+        //  - Tree Reuse;
+        //  - AWLM heuristic.
+        AI ai1 = new FusionRTS(utt,false,false,false);     
+        AI ai2 = new NaiveMCTS(utt);
+        //AI ai2 = new LightRush(utt, new BFSPathFinding());
 
         JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_BLACK);
 //        JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_WHITE);

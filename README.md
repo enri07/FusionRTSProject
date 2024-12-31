@@ -12,10 +12,9 @@ FusionRTS is a Java-based project aimed at developing an advanced AI for the mic
 - [Installation](#installation)
 - [Usage](#usage)
 - [Architecture](#architecture)
-- [How to Train and Test Your AI](#how-to-train-and-test-your-ai)
 - [Contributing](#contributing)
 - [Authors](#Authors)
-- [License](#license)
+- [Acknowledgments](#Acknowledgments)
 
 ---
 
@@ -111,9 +110,9 @@ Contributions to FusionRTS are welcome! If you have ideas for further improvemen
 ### Current Lead Authors
 
 - **DeJava Team**
-  Enrico Calandrini
-  Carmine Vitiello
-  Davide Mele
+  - Enrico Calandrini
+  - Carmine Vitiello
+  - Davide Mele
 
 ---
 

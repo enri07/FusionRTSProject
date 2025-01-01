@@ -3,8 +3,6 @@ package fusionrts;
 import java.util.List;
 
 import ai.mcts.naivemcts.UnitActionTableEntry;
-import rts.UnitAction;
-import rts.units.Unit;
 
 /**
  *

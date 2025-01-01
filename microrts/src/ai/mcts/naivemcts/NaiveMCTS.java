@@ -364,12 +364,12 @@ public class NaiveMCTS extends AIWithComputationBudget implements InterruptibleA
 
     @Override
     public String getTournamentColumnsStatistics() {
-        return "avgTimeSimulation" + Tournament.splitter + "avgDeepTree" + Tournament.splitter + String.join(Tournament.splitter, statisticsVisitActions.keySet());
+        return "avgTimeSimulation" + Tournament.splitter + "avgDeepTree" /*+ Tournament.splitter + String.join(Tournament.splitter, statisticsVisitActions.keySet())*/;
     }
 
     @Override
     public String getTournamentStatistics() {
-        return avgTimeSimulation + Tournament.splitter + avgDeepTree + Tournament.splitter + String.join(Tournament.splitter, statisticsVisitActions.values().stream().map((Object::toString)).toList());
+        return avgTimeSimulation + Tournament.splitter + avgDeepTree /*+ Tournament.splitter + String.join(Tournament.splitter, statisticsVisitActions.values().stream().map((Object::toString)).toList())*/;
     }
     
     @Override

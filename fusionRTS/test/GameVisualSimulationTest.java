@@ -4,8 +4,6 @@
  */
 
 import ai.core.AI;
-import ai.abstraction.LightRush;
-import ai.abstraction.pathfinding.BFSPathFinding;
 import ai.mcts.naivemcts.NaiveMCTS;
 import fusionrts.FusionRTS;
 import gui.PhysicalGameStatePanel;

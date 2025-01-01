@@ -113,7 +113,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         // Set the enanchments to be used
         
         // Progressive history
-        if ( PH_flag == true ){
+        if (PH_flag) {
             globalStrategy = FusionRTSNode.UCB1PH;
             PHStructures = new GlobalMaps_PH();
         }
@@ -122,12 +122,12 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         }
         
         // Tree reuse
-        if ( TR_flag == true ){
+        if (TR_flag) {
             TR_enabled = true;
         }
         
         // AWLM heuristic
-        if( AWLM_flag == true ){
+        if(AWLM_flag) {
             ef = new AWLM_EvaluationFunction();
         }
     }    
@@ -153,21 +153,20 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         // Set the enanchments to be used
         
         // Progressive history
-        if ( PH_flag == true ){
+        if (PH_flag) {
             globalStrategy = FusionRTSNode.UCB1PH;
             PHStructures = new GlobalMaps_PH();
-        }
-        else{
+        } else {
             globalStrategy = FusionRTSNode.UCB1;
         }
         
         // Tree reuse
-        if ( TR_flag == true ){
+        if (TR_flag) {
             TR_enabled = true;
         }
         
         // AWLM heuristic
-        if( AWLM_flag == true ){
+        if(AWLM_flag) {
             ef = new AWLM_EvaluationFunction();
         }
     }
@@ -307,7 +306,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         }
 
         // NEW: tree reuse enhancement
-        if( TR_enabled ){
+        if( TR_enabled ) {
             FusionRTSNode best = (FusionRTSNode) tree.children.get(idx);
             // Remove parent connection
             best.parent = null;
@@ -355,28 +354,10 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
                 gs.issue(playoutPolicy.getAction(1, gs));
             }
         } while(!gameover && gs.getTime() < time);
-
-        /*for(String key : PHStructures.statisticsVisitActions.keySet()) {
-            System.out.println(key);
-            System.out.println(PHStructures.statisticsVisitActions.get(key));
-            System.out.println("##############################################");
-        }
-        for(NoIDKey key : PHStructures.typeXYMap.keySet()) {
-            System.out.println(key.toString());
-            ExtendedUnitActionTableEntry entry = PHStructures.typeXYMap.get(key);
-            System.out.println(entry.u.toString());
-            System.out.println(entry.nactions);
-            System.out.println(entry.accumEvaluationList);
-            System.out.println(entry.visitCountList);
-            for(UnitAction action : entry.actions) {
-                System.out.println(action.toString());
-            }
-            System.out.println("##############################################");
-        }*/
     }
 
     // NEW: tree reuse
-    public FusionRTSNode findNewState( GameState currentGs ){
+    public FusionRTSNode findNewState( GameState currentGs ) {
         // We look if any of the known child of the node has a game state equal
         // to the new one
         if (rootToBeReused == null || rootToBeReused.children == null) return null;
@@ -408,12 +389,22 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     }
     @Override
     public String getTournamentColumnsStatistics() {
-        return "avgTimeSimulation" + Tournament.splitter + "avgDeepTree" + Tournament.splitter + PHStructures.statisticsVisitActions.keySet().stream().map((String key) -> key + Tournament.splitter).toString();
+        return "avgTimeSimulation" + Tournament.splitter + "avgDeepTree"
+                + (PHStructures != null ?
+                    String.join(Tournament.splitter, PHStructures.statisticsVisitActions.keySet())
+                    :
+                    "")
+                ;
     }
 
     @Override
     public String getTournamentStatistics() {
-        return avgTimeSimulation + Tournament.splitter + avgDeepTree + Tournament.splitter + PHStructures.statisticsVisitActions.values().stream().map((Integer value) -> value + Tournament.splitter).toString();
+        return avgTimeSimulation + Tournament.splitter + avgDeepTree + Tournament.splitter
+                + (PHStructures != null ?
+                    String.join(Tournament.splitter, PHStructures.statisticsVisitActions.values().stream().map((Object::toString)).toList())
+                    :
+                    "")
+                ;
     }
 
     @Override
@@ -562,11 +553,10 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         PH_enabled = flag;
         
         // Progressive history
-        if ( flag == true ){
+        if (flag) {
             globalStrategy = FusionRTSNode.UCB1PH;
             PHStructures = new GlobalMaps_PH();
-        }
-        else{
+        } else {
             globalStrategy = FusionRTSNode.UCB1;
         }
     }  
@@ -575,14 +565,8 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         return TR_enabled;
     }
     
-    public void setTR_Flag(boolean flag)
-    {
+    public void setTR_Flag(boolean flag) {
         TR_enabled = flag;
-        
-        // Tree reuse
-        if ( flag == true ){
-            TR_enabled = true;
-        }
     }  
     
     public boolean getAWLM_Flag() {
@@ -594,7 +578,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         AWLM_enabled = flag;
         
         // AWLM heuristic
-        if( flag == true ){
+        if(flag) {
             ef = new AWLM_EvaluationFunction();
         }
     }  

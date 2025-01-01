@@ -55,6 +55,7 @@ import ai.portfolio.PortfolioAI;
 import ai.portfolio.portfoliogreedysearch.PGSAI;
 import ai.puppet.PuppetSearchMCTS;
 import ai.stochastic.UnitActionProbabilityDistribution;
+import fusionrts.*;
 import gui.MouseController;
 import gui.PhysicalGameStateMouseJFrame;
 import gui.PhysicalGameStatePanel;
@@ -104,11 +105,10 @@ import ai.evaluation.SimpleOptEvaluationFunction;
 import ai.mcts.believestatemcts.BS3_NaiveMCTS;
 import ai.mcts.uct.DownsamplingUCT;
 import ai.scv.SCV;
-import fusionrts.FusionRTS;
 
 /**
  *
- * @author santi
+ *
  */
 public class FEStatePaneNew extends JPanel {
     PhysicalGameStatePanel statePanel;
@@ -153,7 +153,7 @@ public class FEStatePaneNew extends JPanel {
                    UCT.class,
                    UCTUnitActions.class,
                    UCTFirstPlayUrgency.class,
-                   DownsamplingUCT.class, 
+                   DownsamplingUCT.class,
                    NaiveMCTS.class,
                    BS3_NaiveMCTS.class,
                    MLPSMCTS.class,
@@ -161,7 +161,6 @@ public class FEStatePaneNew extends JPanel {
                    InformedNaiveMCTS.class,
                    PuppetSearchMCTS.class,
                    SCV.class,
-                   FusionRTS.class,
                    FusionRTSWithAWLM.class,
                    FusionRTSWithAWLMAndPH.class,
                    FusionRTSWithAWLMAndTR.class,

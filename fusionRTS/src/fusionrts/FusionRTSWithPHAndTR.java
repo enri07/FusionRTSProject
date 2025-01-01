@@ -4,6 +4,7 @@ import ai.core.AI;
 import ai.evaluation.EvaluationFunction;
 import ai.evaluation.SimpleSqrtEvaluationFunction3;
 import rts.units.UnitTypeTable;
+import ai.RandomBiasedAI;
 
 public class FusionRTSWithPHAndTR extends FusionRTS {
 

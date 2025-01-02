@@ -161,12 +161,14 @@ public class FEStatePaneNew extends JPanel {
                    InformedNaiveMCTS.class,
                    PuppetSearchMCTS.class,
                    SCV.class,
+                   FusionRTS.class,
                    FusionRTSWithAWLM.class,
                    FusionRTSWithAWLMAndPH.class,
                    FusionRTSWithAWLMAndTR.class,
                    FusionRTSWithPH.class,
                    FusionRTSWithTR.class,
                    FusionRTSWithPHAndTR.class,
+                   FusionRTSWithAllEnhancements.class
                   };
 
     

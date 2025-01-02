@@ -376,7 +376,11 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "(" + TIME_BUDGET + ", " + ITERATIONS_BUDGET + ", " + MAX_SIMULATION_TIME + "," + MAX_TREE_DEPTH + "," + epsilon_l + ", " + discount_l + ", " + epsilon_g + ", " + discount_g + ", " + epsilon_0 + ", " + discount_0 + ", " + playoutPolicy + ", " + ef + ")";
+        return getClass().getSimpleName() + "(" + TIME_BUDGET + ", " + ITERATIONS_BUDGET + 
+                ", " + MAX_SIMULATION_TIME + "," + MAX_TREE_DEPTH + "," + epsilon_l + 
+                ", " + discount_l + ", " + epsilon_g + ", " + discount_g + ", " +
+                epsilon_0 + ", " + discount_0 + ", " + playoutPolicy + ", " + ef + 
+                PH_enabled + ", " + TR_enabled + ", " + AWLM_enabled + ")";
     }
     
     @Override

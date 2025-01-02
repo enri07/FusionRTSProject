@@ -393,7 +393,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
     }
     @Override
     public String getTournamentColumnsStatistics() {
-        return "avgTimeSimulation" + Tournament.splitter + "avgDeepTree"
+        return "avgTimeSimulation" + Tournament.splitter + "avgDeepTree" + Tournament.splitter
                 + (PHStructures != null ?
                     String.join(Tournament.splitter, PHStructures.statisticsVisitActions.keySet())
                     :

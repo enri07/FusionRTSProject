@@ -110,7 +110,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         ef = a_ef;
         forceExplorationOfNonSampledActions = fensa;
         
-        // Set the enanchments to be used
+        // Set the enhancements to be used
         
         // Progressive history
         if (PH_flag) {
@@ -150,7 +150,7 @@ public class FusionRTS extends AIWithComputationBudget implements InterruptibleA
         ef = a_ef;
         forceExplorationOfNonSampledActions = fensa;
         
-        // Set the enanchments to be used
+        // Set the enhancements to be used
         
         // Progressive history
         if (PH_flag) {

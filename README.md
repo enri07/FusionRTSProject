@@ -64,9 +64,9 @@ To build and run this project, you'll need:
 
 ## Test
 
-We adapted the `FrontEnd.java` file available in microRTS to incorporate the newly created AIs. You can find it and run it from the same test repository used for the `GameVisualSimulationTest.java` file. After you run the file, you should encounter the following interface:
+We adapted the `FrontEnd.java` file available in microRTS to incorporate the newly created AIs. You can find and run it from the same test repository used for the `GameVisualSimulationTest.java` file. After you run the file, you should encounter the following interface:
 
-![Basic FrontEnd Interface](./Images/FrontEnd_basic.png)
+<img src="./Images/FrontEnd_basic.png" alt="Basic FrontEnd Interface" width="600">
 
 0. **Configure Match information**
    - In the upper part of the interface you can configure several statistic about the match you want to create. For example, you can click the `load` button and you can enter a specific map available in the folder `FusionRTSProject/microrts/maps/`.
@@ -79,10 +79,10 @@ We adapted the `FrontEnd.java` file available in microRTS to incorporate the new
    - The first possibility is to directly select from the list of AIs the ones incorporating some specific enanchments. E.g. `FusionRTSWithPH` is a `NaiveMCTS` already defined with Progressive History activated.
    - A second possibility is to select the general `FusionRTS` AI. This should open the interface shown in the Figure below. As you can see, at the bottom of it you can directly select the specific combination of enhancements you would like to test. 
 
-   ![FusionRTS Interface](./Images/FusionRTS_Interface.png)
+   <img src="./Images/FusionRTS_Interface.png" alt="FusionRTS Interface" width="400">
 
 3. **Run the game**:
-   - Laastly, you can simply run the configurated game by clicking the `Start` button and see the AIs facing each other.
+   - Lastly, you can simply run the configurated game by clicking the `Start` button and see the AIs facing each other.
 
 ---
 

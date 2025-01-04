@@ -79,7 +79,7 @@ We adapted the `FrontEnd.java` file available in microRTS to incorporate the new
    - The first possibility is to directly select from the list of AIs the ones incorporating some specific enanchments. E.g. `FusionRTSWithPH` is a `NaiveMCTS` already defined with Progressive History activated.
    - A second possibility is to select the general `FusionRTS` AI. This should open the interface shown in the Figure below. As you can see, at the bottom of it you can directly select the specific combination of enhancements you would like to test. 
 
-   <img src="./Images/FusionRTS_Interface.png" alt="FusionRTS Interface" width="250">
+<img src="./Images/FusionRTS_Interface.png" alt="FusionRTS Interface" width="250">
 
 3. **Run the game**:
    - Lastly, you can simply run the configurated game by clicking the `Start` button and see the AIs facing each other.

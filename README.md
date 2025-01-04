@@ -58,37 +58,31 @@ To build and run this project, you'll need:
 
 3. In your Java IDE, start by creating a new empty Java project named `FusionRTS`. Next, update the project properties by setting the source path to `FusionRTSProject/FusionRTS/src/`. Finally, configure the project's dependencies by linking it to the MicroRTS project created in step 2 through the `Libraries field`, and by adding all the JAR files located in `FusionRTSProject/microrts/lib/`.
 
-4. To test wheter the configuration was successfully completed, add the `FusionRTSProject/FusionRTS/test/` folder inside the test path of `FusionRTS` project. Then, navigate to this folder and run the `GameVisualSimulationTest.java` file. If everything is correct, you should see the `FusionRTS` AI facing a base `MCTS` AI on a 16x16 map.
+4. To test wheter the configuration was successfully completed, add the `FusionRTSProject/FusionRTS/test/` folder inside the test path of `FusionRTS` project. Then, navigate to this folder and run the `GameVisualSimulationTest.java` file. If everything is correct, you should see the `FusionRTS` AI with all the enanchment activated facing a base `MCTS` AI on a 16x16 map.
 
 ---
 
-## Usage
+## Test
+
+We adapted the `FrontEnd.java` file available in microRTS to incorporate the newly created AIs. You can find it and run it from the same test repository used for the `GameVisualSimulationTest.java` file. After you run the file, you should encounter the following interface:
+
+![Basic FrontEnd Interface](./Images/FrontEnd_basic.png)
+
+0. **Configure Match information**
+   - In the upper part of the interface you can configure several statistic about the match you want to create. For example, you can click the `load` button and you can enter a specific map available in the folder `FusionRTSProject/microrts/maps/`.
 
 1. **Configure your AI**:
-   - Define your AI logic in the `src/main/java/ai` directory.
-   - Use the `CustomAI.java` template as a starting point.
+   - Then you have to select the Player0 and Player1 AIs. By scrolling the interative window, you can select any of the already available AIs in microRTS as well as the newly FusionRTS AIs available at the end.
 
-2. **Run your AI against built-in AIs**:
-   - Update the `GameRunner` class to include your AI and an opponent AI.
-   - Specify the map and game configuration.
+2. **Configure FusionRTS AI with specific enanchments**:
+   - To select the FusionRTS AI with a specific combination of enanchments we have provided several options.
+   - The first possibility is to directly select from the list of AIs the ones incorporating some specific enanchments. E.g. `FusionRTSWithPH` is a `NaiveMCTS` already defined with Progressive History activated.
+   - A second possibility is to select the general `FusionRTS` AI. This should open the interface shown in the Figure below. As you can see, at the bottom of it you can directly select the specific combination of enhancements you would like to test. 
 
-   Example configuration:
-   ```java
-   GameRunner.runGame(
-       new CustomAI(),  // Your AI
-       new RandomAI(),  // Opponent AI
-       "maps/8x8/basesWorkers8x8.xml",  // Map
-       1000  // Max game duration in cycles
-   );
-   ```
+   ![FusionRTS Interface](./Images/FusionRTS_Interface.png)
 
-3. **Run the project**:
-   ```bash
-   mvn exec:java
-   ```
-
-4. **Analyze results**:
-   - Game statistics and logs will be saved in the `logs/` directory.
+3. **Run the game**:
+   - Laastly, you can simply run the configurated game by clicking the `Start` button and see the AIs facing each other.
 
 ---
 

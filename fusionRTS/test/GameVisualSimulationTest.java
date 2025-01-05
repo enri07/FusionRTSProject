@@ -6,6 +6,7 @@
 import ai.core.AI;
 import ai.mcts.naivemcts.NaiveMCTS;
 import fusionrts.FusionRTS;
+import fusionrts.FusionRTSWithAllEnhancements;
 import gui.PhysicalGameStatePanel;
 
 import javax.swing.JFrame;
@@ -35,7 +36,8 @@ public class GameVisualSimulationTest {
         //  - Progressive History;
         //  - Tree Reuse;
         //  - AWLM heuristic.
-        AI ai1 = new FusionRTS(utt,false,false,false);     
+        //AI ai1 = new FusionRTS(utt,false,false,false);
+        AI ai1 = new FusionRTSWithAllEnhancements(utt);
         AI ai2 = new NaiveMCTS(utt);
         //AI ai2 = new LightRush(utt, new BFSPathFinding());
 
